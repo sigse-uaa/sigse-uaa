@@ -319,6 +319,13 @@ Proveedores habituales: Hetzner, DigitalOcean, Vultr o Linode. El costo aproxima
 **5–10 USD al mes**; el dominio cuesta aparte. Los builds de Flutter se hacen en la máquina
 local o en CI, no en el VPS.
 
+**Ejemplo concreto en Hetzner:** Cloud **CX23** (sucesor del CX22), 2 vCPU, 4 GB de RAM,
+40 GB NVMe, 20 TB de tráfico, imagen **Ubuntu 24.04 LTS**, ubicación Falkenstein o Helsinki,
+con IPv4 pública. Cuesta aproximadamente **€5.99 al mes + IVA**; los respaldos automáticos
+agregan ~20 %. No se necesita volumen extra, base administrada, IP flotante ni balanceador.
+Si CX23 no está disponible por la restricción de inventario de Hetzner, una alternativa es
+**CAX11** (ARM, 2 vCPU, 4 GB, 40 GB) o cambiar de proveedor.
+
 #### Por qué la base de datos no debe ser pública
 
 La base **no necesita** estar expuesta a internet para que el sistema funcione. Solo el
