@@ -1,8 +1,7 @@
 # Plan de trabajo — SIGSE
 
 > Sistema n.º 9: **Inspección de señalización**. Documento vivo. Última actualización:
-> **2026-11-18**. Cualquier cambio de alcance, fecha o responsable debe reflejarse aquí y en
-> `AGENTS.md`.
+> **2026-11-18**. Cualquier cambio de alcance, fecha o responsable debe reflejarse aquí.
 
 ---
 
@@ -69,8 +68,7 @@ Projects, ramas y PRs; despliegue y defensa individual.
 | Uploads | Multer a disco + `/uploads` | Simple para demo; ver riesgos de despliegue |
 | Git | `main` protegida + ramas cortas + PR | Exigencia explícita del PDF |
 
-Si alguna decisión cambia, se documenta en `docs/ARQUITECTURA.md` y en la bitácora de
-`AGENTS.md`.
+Si alguna decisión cambia, se documenta en `docs/ARQUITECTURA.md` y en este plan.
 
 ---
 
@@ -124,7 +122,7 @@ aislados: todos tocan Flutter, API, pruebas y documentación.
 | E4 | Integración E2E, builds Android/web/Linux, deploy API/DB/web, APK | 7 | E3, D3, A3 | URL web pública, APK instalable, API accesible desde otro dispositivo |
 | E5 | Coordinación, reporte técnico, presentación y ensayo de defensa | 4 | todas | Reporte completo y demo ensayada sin errores críticos |
 
-**Extra transversal:** mantiene `AGENTS.md`, README y CI; revisa PRs de Diana y Alonso.
+**Extra transversal:** mantiene `README.md` y CI; revisa PRs de Diana y Alonso.
 
 ### 4.2 Diana — 33 puntos
 
@@ -157,6 +155,17 @@ aislados: todos tocan Flutter, API, pruebas y documentación.
 - **Todos:** conocer la arquitectura completa; nadie puede decir “eso lo hizo otro”.
 - **Todos:** documentar decisiones y evidencias en el PR/Issue correspondiente.
 - **Rotación de revisión:** Edson ↔ Diana ↔ Alonso; evitar que el dueño apruebe su propio PR.
+
+### 4.5 Uso de IA y autonomía
+
+- El reparto es por **personas**, no por herramientas. Cada integrante puede usar el agente o
+  asistente que prefiera; el plan no depende de que todos tengan el mismo.
+- Las instrucciones personales de asistentes (`AGENTS.md` u otras) **no se versionan** en el
+  repositorio; son configuración local de cada quien.
+- La IA puede apoyar a escribir, revisar o explicar código, pero **nadie integra código que no
+  pueda defender**. En la defensa el profesor puede pedir cambios y preguntas individuales.
+- Si un agente genera una solución, el responsable del módulo debe revisarla, probarla y
+  adaptarla al contrato del proyecto.
 
 ---
 
@@ -211,6 +220,22 @@ D3 + A3 + A4 → E4 → E5
 - Si D1 se retrasa, bloquea D2, A1 y todas las pantallas con datos.
 - Si A1 se retrasa, el panel operador y la regla de negocio no pueden probarse.
 - E2 debe cerrarse temprano: es la base de todas las pantallas.
+
+### 6.1 Cómo reducir dependencias
+
+No se puede eliminar toda dependencia en un sistema cliente-servidor, pero sí reducirla:
+
+1. **Contrato primero:** congelar `docs/API.md` y `docs/MODELO_DATOS.md` antes de programar.
+   Los cambios de contrato se avisan en el PR y se actualiza el documento.
+2. **Trabajo con mocks:** las pantallas pueden avanzar con repositorios falsos mientras el
+   backend termina. La entrega final siempre usa el backend real.
+3. **Capas compartidas con dueño único:** `app/lib/core/` lo mantiene Edson; los cambios de
+   otros entran por PR. Así se evitan conflictos en el cliente HTTP, modelos y tema.
+4. **Vertical slices:** cada quien puede cerrar una funcionalidad completa (UI + llamada HTTP +
+   prueba) sin esperar a que termine el módulo de otro, siempre que respete el contrato.
+5. **Integración diaria:** no dejar todo para el final. Un PR pequeño por día a partir del 20.
+6. **Datos de prueba compartidos:** Diana mantiene un seed reproducible para que todos prueben
+   con los mismos usuarios y categorías.
 
 **Plan de contingencia:** si el tiempo se reduce, se congela el alcance en este orden:
 1. Login + crear inspección + listado + detalle (MVP demostrable).

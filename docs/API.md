@@ -517,4 +517,4 @@ Cualquier cambio (campo, código, ruta) debe:
 1. Actualizar este documento.
 2. Avisar en el Issue/PR.
 3. Ajustar modelos Flutter y pruebas.
-4. Registrarse en `AGENTS.md` si es estructural.
+4. Registrarse en `docs/PLAN_TRABAJO.md` si es estructural.

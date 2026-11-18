@@ -1,7 +1,7 @@
 # Arquitectura — SIGSE
 
 Documento de decisiones técnicas y estructura del sistema. Debe mantenerse alineado con el
-código y con `AGENTS.md`.
+código y con `docs/PLAN_TRABAJO.md`.
 
 ---
 

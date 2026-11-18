@@ -23,7 +23,7 @@ configuración de GitHub— está en **[docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.
 - [ ] Sin secretos, credenciales ni archivos generados.
 - [ ] Documentación actualizada si cambió el contrato de API o el modelo de datos.
 - [ ] Capturas o evidencia de la funcionalidad en el PR.
-- [ ] `AGENTS.md` actualizado si cambió una decisión, comando o el estado del proyecto.
+- [ ] `docs/PLAN_TRABAJO.md` actualizado si cambió una decisión o el estado del proyecto.
 
 ## Uso de IA
 

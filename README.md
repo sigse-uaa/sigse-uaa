@@ -6,10 +6,11 @@ rutas de circulación y elementos de seguridad en espacios universitarios.
 Proyecto final de **Programación de Dispositivos Móviles** — Ingeniería en Sistemas
 Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascalientes.
 
-> **Estado actual: base de planeación.** Este repositorio contiene por ahora los requisitos,
-> la arquitectura propuesta, el contrato de API, el plan de pruebas, el reparto de trabajo y
-> las plantillas de GitHub. **Todavía no incluye código de backend ni de Flutter**; la
-> implementación comienza en el Sprint 1 y se reparte entre los tres integrantes.
+> **Estado actual: base de planeación + esqueleto Flutter.** El repositorio contiene los
+> requisitos, la arquitectura propuesta, el contrato de API, el plan de pruebas, el reparto de
+> trabajo, las plantillas de GitHub y un proyecto Flutter mínimo que ya compila. **Todavía no
+> incluye backend, base de datos ni funcionalidades**; eso comienza en el Sprint 1 y se reparte
+> entre los tres integrantes.
 
 | Campo | Valor |
 | --- | --- |
@@ -35,11 +36,10 @@ Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascali
 | [`docs/PRUEBAS.md`](docs/PRUEBAS.md) | Pruebas obligatorias 9.1–9.5 y matriz de estados |
 | [`docs/REPORTE_TECNICO.md`](docs/REPORTE_TECNICO.md) | Estructura del reporte, guion de demo y preguntas de defensa |
 | [`docs/requisitos/`](docs/requisitos/) | PDF original y requisitos convertidos a Markdown |
-| [`AGENTS.md`](AGENTS.md) | Contexto operativo, decisiones y bitácora del proyecto |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Reglas mínimas para contribuir |
 
-Fuentes originales: [`Programacion_Movil_Proyecto_Final.pdf`](Programacion_Movil_Proyecto_Final.pdf)
-y [`proyecto9.md`](proyecto9.md).
+Fuentes originales: [`docs/requisitos/Programacion_Movil_Proyecto_Final.pdf`](docs/requisitos/Programacion_Movil_Proyecto_Final.pdf)
+y [`docs/requisitos/sistema-09-inspeccion-senalizacion.md`](docs/requisitos/sistema-09-inspeccion-senalizacion.md).
 
 ---
 
@@ -67,8 +67,8 @@ El detalle de tareas, dependencias y criterios de aceptación está en
 | Mapas | `flutter_map` + OpenStreetMap (sin API key) |
 | Recursos móviles | `image_picker`, `geolocator`, `sensors_plus`, `connectivity_plus` |
 
-Cualquier cambio a estas decisiones se registra en `AGENTS.md` y, si es estructural, en
-`docs/ARQUITECTURA.md`.
+Cualquier cambio a estas decisiones se registra en `docs/PLAN_TRABAJO.md` y, si es estructural,
+en `docs/ARQUITECTURA.md`.
 
 ---
 
@@ -76,23 +76,38 @@ Cualquier cambio a estas decisiones se registra en `AGENTS.md` y, si es estructu
 
 ```text
 .
-├── app/                      # Flutter (se crea en el Sprint 1)
-│   ├── lib/core/             # configuración, red, storage, tema, widgets
-│   ├── lib/features/         # auth, home, inspections, admin, profile, shell
-│   └── test/
+├── app/                      # Flutter ya creado (esqueleto mínimo)
+│   ├── lib/core/             # tema y configuración compartida
+│   ├── lib/features/         # módulos por funcionalidad
+│   ├── test/                 # prueba de humo
+│   ├── android/              # plataforma Android
+│   ├── web/                  # plataforma web
+│   └── linux/                # plataforma Linux
 ├── backend/                  # API Node.js + Express (Sprint 1)
-│   ├── src/{config,controllers,services,middleware,routes,validators,utils}
-│   ├── test/
-│   └── uploads/
 ├── database/                 # schema.sql, seed.sql y notas (Sprint 0–1)
 ├── docs/                     # requisitos, plan, arquitectura, API, pruebas, reporte
 ├── .github/                  # plantillas de Issues y PR
-├── docker-compose.yml        # MySQL local reproducible (Sprint 0–1)
-└── AGENTS.md
+└── docker-compose.yml        # MySQL local reproducible (Sprint 0–1)
 ```
 
-La base actual **no** contiene `app/`, `backend/`, `database/` ni `docker-compose.yml`; se
-agregarán por los responsables indicados en el plan, mediante Issues y PRs.
+La base actual contiene `app/` con una pantalla inicial y sin lógica de negocio. **No** contiene
+`backend/`, `database/` ni `docker-compose.yml`; se agregarán por los responsables indicados en
+el plan, mediante Issues y PRs.
+
+Plataformas generadas: **Android, web y Linux**. iOS no está incluido porque el PDF no lo exige;
+si se necesita, se puede agregar después con macOS + Xcode o un servicio de CI con macOS.
+
+### 4.1 Ejecutar el esqueleto
+
+```bash
+cd app
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d chrome
+```
+
+También se puede ejecutar con `flutter run -d linux` o en un dispositivo Android conectado.
 
 ---
 
@@ -111,11 +126,12 @@ Comandos y configuración paso a paso: [`docs/GIT_WORKFLOW.md`](docs/GIT_WORKFLO
 
 ## 6. Primeros pasos del equipo
 
-1. Leer `AGENTS.md`, `docs/PLAN_TRABAJO.md` y `docs/GIT_WORKFLOW.md`.
+1. Leer `docs/PLAN_TRABAJO.md` y `docs/GIT_WORKFLOW.md`.
 2. Crear la organización y el repositorio remoto `sigse-uaa`.
 3. Configurar protección de `main`, labels, milestones y el tablero de Projects.
 4. Abrir los Issues del Sprint 0 (ver backlog del plan) y asignarlos.
-5. Comenzar por `E1`, `D1` y el esqueleto de `A1` según la ruta crítica.
+5. Comenzar por `E2`, `D1` y el esqueleto de `A1` según la ruta crítica; el esqueleto Flutter de
+   `E1` ya está creado.
 
 ---
 

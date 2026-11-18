@@ -68,6 +68,9 @@ Thumbs.db
 desktop.ini
 *.log
 
+# --- Documentos personales de asistentes de IA ---
+AGENTS.md
+
 # --- Documentos temporales ---
 *.tmp
 *.bak
