@@ -286,20 +286,174 @@ sequenceDiagram
 
 ## 6. Despliegue
 
-### 6.1 Topología recomendada (gratuita)
+### 6.1 Solución final recomendada: un VPS con Docker
+
+Para la entrega se recomienda **un solo VPS** (servidor privado virtual) con Ubuntu 24.04 LTS.
+Es la opción más simple para cumplir con el despliegue y evita depender de varios servicios
+gratuitos que se duermen o cambian sus límites.
 
 ```text
-[Flutter Web estático]  →  Firebase Hosting / Netlify / GitHub Pages
-[API Express]           →  Railway / Render
-[MySQL 8]               →  Railway MySQL / Aiven / Clever Cloud
-[APK Android]           →  artifact de GitHub Releases
-[Escritorio]            →  build Linux/Windows en Releases
+Internet
+   │
+   ├── 80/443 ──► Caddy ──► /       Flutter Web (archivos estáticos)
+   │                 └────► /api    Node.js + Express
+   │                 └────► /uploads evidencias
+   │
+   └── 22 ─────► SSH (solo administración)
+
+Node.js ──► MySQL 8 (red interna de Docker, sin puerto público)
+Node.js ──► volumen persistente para uploads
 ```
 
-Alternativa académica: backend y MySQL en una computadora del equipo + túnel
-(Cloudflare Tunnel/ngrok) para que otros dispositivos accedan.
+#### Especificaciones sugeridas
 
-### 6.2 Variables de entorno del backend
+| Recurso | Mínimo | Recomendado |
+| --- | --- | --- |
+| CPU | 1 vCPU | 2 vCPU |
+| RAM | 2 GB | 4 GB |
+| Disco | 40 GB SSD | 60–80 GB SSD |
+| Sistema | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
+| Red | IP pública + dominio | Dominio con HTTPS |
+
+Proveedores habituales: Hetzner, DigitalOcean, Vultr o Linode. El costo aproximado es de
+**5–10 USD al mes**; el dominio cuesta aparte. Los builds de Flutter se hacen en la máquina
+local o en CI, no en el VPS.
+
+#### Por qué la base de datos no debe ser pública
+
+La base **no necesita** estar expuesta a internet para que el sistema funcione. Solo el
+backend necesita una dirección pública. MySQL se queda en la red interna de Docker y:
+
+- no se publica el puerto `3306` en `docker-compose.yml`;
+- el firewall solo permite `22`, `80` y `443`;
+- el backend se conecta usando el nombre interno `db:3306`;
+- las copias de seguridad se hacen por SSH o un Cron del servidor.
+
+El profesor puede verificar la conexión con `GET /api/health/db`, con el login funcionando y
+con una consulta por SSH. No hace falta abrir MySQL a internet. Si se usa un MySQL administrado,
+tendrá un endpoint, pero se protege con firewall, usuario limitado, contraseña fuerte y TLS.
+
+#### Pasos de despliegue
+
+1. Crear el VPS con llave SSH, usuario sin privilegios y firewall (22, 80, 443).
+2. Apuntar el dominio al IP del VPS con un registro `A`.
+3. Instalar Docker Engine y el plugin `docker compose`.
+4. Clonar el repositorio y crear `.env` a partir de `.env.example`.
+5. Generar el build web y el APK apuntando a `https://TU_DOMINIO/api`.
+6. Levantar los servicios con `docker compose up -d --build`.
+7. Cargar `schema.sql` y `seed.sql` una sola vez.
+8. Verificar `/api/health`, `/api/health/db`, login, subida de foto y acceso desde dos
+   dispositivos.
+9. Programar respaldo de MySQL y del volumen de uploads.
+10. Opcional: agregar despliegue automático desde GitHub Actions por SSH.
+
+#### Caddy como proxy y HTTPS
+
+Caddy simplifica el certificado TLS automático y sirve la web y la API bajo el mismo dominio,
+lo que evita problemas de CORS:
+
+```caddyfile
+{$DOMAIN} {
+    encode gzip
+
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+
+    handle /uploads/* {
+        reverse_proxy api:3000
+    }
+
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+}
+```
+
+#### Referencia de `docker-compose.yml`
+
+Este archivo se activa cuando existan `backend/Dockerfile` y el build web. La base de datos no
+publica puertos:
+
+```yaml
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./app/build/web:/srv:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:
+  uploads:
+  caddy_data:
+  caddy_config:
+```
+
+#### ¿Cumple con lo que pide el profesor?
+
+| Requisito | Cómo se cumple |
+| --- | --- |
+| Backend desplegado y accesible | `https://TU_DOMINIO/api` |
+| Base de datos central persistente | MySQL con volumen `mysql_data` |
+| Web publicada | Flutter Web servido por Caddy |
+| Android ejecutable en físico | APK firmado apuntando al dominio |
+| Escritorio ejecutable | Build Linux/Windows apuntando al dominio |
+| Comunicación entre dispositivos | Todos usan el mismo backend y la misma DB |
+| Evidencias persistentes | Volumen `uploads` |
+| Historial y reglas de negocio | Se validan en el backend, no en la DB pública |
+
+### 6.2 Alternativa sin VPS
+
+Si no se quiere administrar un servidor:
+
+- Web estática en Netlify, Vercel o GitHub Pages.
+- API en Render, Railway o Fly.io.
+- MySQL en Railway, Aiven o Clever Cloud.
+- APK y builds de escritorio en GitHub Releases.
+
+Funciona, pero hay más piezas, más variables de entorno, posibles arranques en frío y límites
+gratuitos que cambian. Para una demo académica estable, el VPS único es más predecible.
+
+### 6.3 Variables de entorno del backend
 
 ```env
 NODE_ENV=production
@@ -321,7 +475,7 @@ MAX_UPLOAD_MB=8
 - `PUBLIC_BASE_URL` se usa para construir URLs absolutas de evidencias.
 - Cambiar `JWT_SECRET` y contraseñas demo antes de publicar.
 
-### 6.3 Builds
+### 6.4 Builds
 
 ```bash
 # Web
@@ -336,13 +490,16 @@ flutter build windows --release --dart-define=API_BASE_URL=https://api.example.c
 
 El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` como Release.
 
-### 6.4 Checklist de despliegue
+### 6.5 Checklist de despliegue
 
 - [ ] DB creada con schema + seed.
+- [ ] MySQL no expone el puerto `3306` a internet.
+- [ ] HTTPS activo y redirección desde HTTP.
 - [ ] API responde `/api/health` y `/api/health/db`.
 - [ ] CORS configurado para el dominio web.
 - [ ] Login funciona desde web y Android.
 - [ ] Uploads persisten tras reinicio.
+- [ ] Respaldo de MySQL y de uploads programado.
 - [ ] Variables de entorno configuradas (sin secretos en el repo).
 - [ ] Web publicada y accesible.
 - [ ] APK instalado en dispositivo físico.
@@ -366,7 +523,7 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 
 | Tema | Estado | Responsable |
 | --- | --- | --- |
-| Servicio de hosting definitivo | Por definir en Sprint 3 | Edson |
-| Volumen persistente vs Cloudinary | Por definir según hosting | Edson + Alonso |
+| Servicio de hosting definitivo | Recomendado: VPS único; confirmar proveedor en Sprint 3 | Edson |
+| Volumen persistente vs Cloudinary | Recomendado: volumen Docker en el VPS | Edson + Alonso |
 | Firma del APK | Por definir | Edson |
 | Rate limiting | Opcional si hay tiempo | Diana |

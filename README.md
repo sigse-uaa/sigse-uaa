@@ -36,7 +36,7 @@ Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascali
 | [`docs/PRUEBAS.md`](docs/PRUEBAS.md) | Pruebas obligatorias 9.1–9.5 y matriz de estados |
 | [`docs/REPORTE_TECNICO.md`](docs/REPORTE_TECNICO.md) | Estructura del reporte, guion de demo y preguntas de defensa |
 | [`docs/requisitos/`](docs/requisitos/) | PDF original y requisitos convertidos a Markdown |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Reglas mínimas para contribuir |
+| [`CONTRIBUIR.md`](CONTRIBUIR.md) | Reglas mínimas para contribuir |
 
 Fuentes originales: [`docs/requisitos/Programacion_Movil_Proyecto_Final.pdf`](docs/requisitos/Programacion_Movil_Proyecto_Final.pdf)
 y [`docs/requisitos/sistema-09-inspeccion-senalizacion.md`](docs/requisitos/sistema-09-inspeccion-senalizacion.md).
