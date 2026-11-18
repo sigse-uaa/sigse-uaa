@@ -3,6 +3,12 @@
 > **Regla de oro:** `main` está protegida. **Nadie hace push directo a `main`.** Todo cambio
 > entra por rama + Pull Request + revisión + CI en verde.
 
+**CI (integración continua):** es una verificación automática que se ejecuta en GitHub cada
+vez que se sube una rama o se abre una solicitud de cambios. Corre tareas como
+`flutter analyze`, `flutter test` y `npm test`; si algo falla, la solicitud no se integra.
+No es un servidor adicional ni algo que haya que pagar: usa GitHub Actions, incluido en GitHub.
+El archivo de configuración vivirá en `.github/workflows/` cuando exista backend.
+
 Esta guía aplica a los tres integrantes y también al docente cuando revise el historial.
 
 ---

@@ -428,6 +428,28 @@ volumes:
   caddy_config:
 ```
 
+#### Costos y responsables
+
+| Concepto | Costo estimado | Nota |
+| --- | ---: | --- |
+| VPS | 5–10 USD/mes | Puede ser 0 con créditos de estudiante u Oracle Free Tier |
+| Dominio | 10–15 USD/año | Opcional; se puede usar un subdominio gratuito para la demo |
+| HTTPS | 0 | Caddy obtiene el certificado con Let's Encrypt |
+| GitHub y GitHub Actions | 0 | Gratis para repositorios públicos |
+| Mapas | 0 | OpenStreetMap, sin API key |
+| Firma de APK | 0 | Se firma con un keystore propio |
+| iOS | No aplica | Evita los 99 USD/año de Apple; no es requisito |
+| MySQL administrado | 5–15 USD/mes extra | No es necesario si la DB va dentro del VPS |
+| Almacenamiento externo | 0–5 USD/mes | No es necesario si se usa un volumen del VPS |
+
+**Trabajo:** el despliegue es la tarea **E4 de Edson** (7 puntos). Diana apoya con la base de
+datos y Alonso con uploads, pruebas móviles y verificación desde otro dispositivo (A5). Todos
+deben saber explicar la topología en la defensa.
+
+**Dinero:** el profesor no exige un hosting de pago. Si se usa Oracle Free Tier o créditos de
+GitHub Student Pack, el costo puede ser **0**. Si se contrata un VPS, el equipo decide si se
+divide en partes iguales o se reembolsa a quien pague.
+
 #### ¿Cumple con lo que pide el profesor?
 
 | Requisito | Cómo se cumple |
