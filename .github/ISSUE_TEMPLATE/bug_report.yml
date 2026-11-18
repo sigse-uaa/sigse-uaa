@@ -1,0 +1,52 @@
+name: Bug report
+description: Reportar un comportamiento incorrecto o una regresión
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar un problema. No incluyas contraseñas, tokens ni datos personales.
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo afectado
+      options:
+        - App Flutter
+        - Backend / API
+        - Base de datos
+        - Documentación
+        - CI / Infraestructura
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del problema
+      description: ¿Qué ocurre y qué esperabas que ocurriera?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Iniciar sesión como ...
+        2. Abrir ...
+        3. Observar ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia
+      description: Logs, capturas o mensajes de error (sin secretos).
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      placeholder: "Android 14 / Chrome 130 / Linux; backend local en :3000"
+    validations:
+      required: false

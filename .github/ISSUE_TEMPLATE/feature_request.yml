@@ -1,0 +1,51 @@
+name: Feature request
+description: Proponer una funcionalidad o mejora
+title: "[FEAT] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo
+      options:
+        - App Flutter
+        - Backend / API
+        - Base de datos
+        - Documentación
+        - CI / Infraestructura
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema u oportunidad
+      description: ¿Qué necesidad cubre esta propuesta?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Describe la solución esperada y su impacto en API, base de datos o UI.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Responsable sugerido
+      options:
+        - Edson Leonardo Sánchez Montalvo
+        - Diana Ruth Gutiérrez Márquez
+        - Alonso Herrera Benavides
+        - Por definir
+    validations:
+      required: false

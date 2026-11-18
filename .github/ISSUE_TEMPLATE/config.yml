@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Guía de trabajo y Git
+    url: https://github.com/sigse-uaa/sigse-uaa/blob/main/docs/GIT_WORKFLOW.md
+    about: Consulta ramas, commits, PRs y protecciones antes de abrir un Issue.
+  - name: Contrato de API
+    url: https://github.com/sigse-uaa/sigse-uaa/blob/main/docs/API.md
+    about: Endpoints, payloads y códigos de error vigentes.

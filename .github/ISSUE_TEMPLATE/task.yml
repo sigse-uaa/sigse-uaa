@@ -1,0 +1,56 @@
+name: Task
+description: Tarea de implementación, documentación o pruebas
+title: "[TASK] "
+labels: ["task"]
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Responsable
+      options:
+        - Edson Leonardo Sánchez Montalvo
+        - Diana Ruth Gutiérrez Márquez
+        - Alonso Herrera Benavides
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Flutter
+        - Backend
+        - Base de datos
+        - Documentación
+        - CI / Despliegue
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Objetivo
+      description: Resultado verificable de la tarea.
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Lista de trabajo
+      value: |
+        - [ ] Implementación
+        - [ ] Pruebas
+        - [ ] Documentación actualizada
+        - [ ] Revisión de otro integrante
+    validations:
+      required: true
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: Sprint
+      options:
+        - S0 · Base
+        - S1 · Núcleo
+        - S2 · Recursos y operación
+        - S3 · Cierre y entrega
+    validations:
+      required: true

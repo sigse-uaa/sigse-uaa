@@ -1,0 +1,74 @@
+# ============================================================
+# SIGSE — .gitignore raíz
+# ============================================================
+
+# --- Secretos y configuración local ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+key.properties
+
+# --- Node / Backend ---
+backend/node_modules/
+backend/npm-debug.log*
+backend/.npm/
+backend/coverage/
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/demo-senal.png
+!backend/uploads/demo-botiquin.png
+
+# --- Flutter / Dart ---
+app/.dart_tool/
+app/.packages
+app/.pub-cache/
+app/.pub/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/android/.gradle/
+app/android/local.properties
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+app/macos/Pods/
+app/linux/flutter/ephemeral/
+app/windows/flutter/ephemeral/
+app/web/flutter_service_worker.js
+app/**/generated_plugin_registrant.*
+app/**/generated_plugins.cmake
+app/**/GeneratedPluginRegistrant.*
+*.g.dart
+*.freezed.dart
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# --- Base de datos / Docker ---
+mysql-data/
+database/dumps/*.sql
+!database/dumps/.gitkeep
+
+# --- IDEs / Sistema ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# --- Documentos temporales ---
+*.tmp
+*.bak
+~$*
