@@ -29,7 +29,7 @@ Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascali
 
 | Documento | Contenido |
 | --- | --- |
-| [`docs/PLAN_TRABAJO.md`](docs/PLAN_TRABAJO.md) | Alcance, calendario, reparto 34/33/33, backlog por sprint, DoD y riesgos |
+| [`docs/PLAN_TRABAJO.md`](docs/PLAN_TRABAJO.md) | Alcance, calendario, reparto equitativo (~34 pts por persona), backlog por sprint, DoD y riesgos |
 | [`docs/GIT_WORKFLOW.md`](docs/GIT_WORKFLOW.md) | Ramas, commits, PRs, revisiones, protecciones y Projects |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Componentes, capas, offline, recursos móviles y despliegue |
 | [`docs/MODELO_DATOS.md`](docs/MODELO_DATOS.md) | ER, diccionario de datos, estados, permisos e índices |
