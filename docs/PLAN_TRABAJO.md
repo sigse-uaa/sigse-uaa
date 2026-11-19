@@ -102,49 +102,58 @@ correcciones críticas documentadas.
 
 ## 4. División equitativa del trabajo
 
-El proyecto se valoró en **100 puntos relativos** (~120–140 horas totales). Cada integrante
-tiene **33–34 puntos**. La división es por *work packages* verticales, no por “cajones”
-aislados: todos tocan Flutter, API, pruebas y documentación.
+El proyecto se valoró en **102 puntos relativos** (~120–140 horas totales): los 100 originales
+más 2 del esqueleto del backend (A0), que no tenía responsable. Cada integrante tiene
+**33–35 puntos**. La división es por *work packages* verticales, no por “cajones” aislados:
+todos tocan Flutter, API, pruebas y documentación.
 
 | Integrante | Puntos | % | Rol |
 | --- | ---: | ---: | --- |
-| Edson Leonardo Sánchez Montalvo | 34 | 34 % | Líder técnico, core Flutter, integración y despliegue |
-| Diana Ruth Gutiérrez Márquez | 33 | 33 % | Datos, backend de identidad, consulta y caché |
-| Alonso Herrera Benavides | 33 | 33 % | Núcleo de inspecciones, recursos móviles y panel operador |
+| Edson Leonardo Sánchez Montalvo | 35 | 34 % | Líder técnico, core Flutter, auth (API y UI), integración y despliegue |
+| Diana Ruth Gutiérrez Márquez | 33 | 32 % | Datos, usuarios/roles/categorías, consulta, perfil y caché |
+| Alonso Herrera Benavides | 34 | 33 % | Esqueleto del backend, núcleo de inspecciones, recursos móviles y panel operador |
 
-### 4.1 Edson — 34 puntos
+> **Ajuste del reparto (18 nov):** se asignó el esqueleto del backend a Alonso (A0) y el
+> registro/login con JWT pasó de Diana a Edson (E6) para quitar el cuello de botella en D1→D2.
+> A cambio, el perfil y las preferencias de Flutter pasaron de Edson a Diana (D6) y la prueba
+> de comunicación 9.1 de Alonso a Diana (D5).
+
+### 4.1 Edson — 35 puntos
 
 | ID | Tarea | Pts | Depende de | Criterio de aceptación |
 | --- | --- | ---: | --- | --- |
 | E1 | Repo, organización, protecciones, labels, Projects, plantillas, CI | 6 | — | `main` protegida, CI verde, Issues/PR templates y tablero de 4 columnas |
 | E2 | Core Flutter: tema, navegación responsiva, `ApiClient`, storage, modelos base, widgets | 9 | E1 | App compila; `flutter analyze` limpio; patrón documentado |
-| E3 | Auth UI (login/registro), sesión persistente, perfil y preferencias | 8 | E2, D2 | Login real contra API; sesión sobrevive reinicio; logout limpio |
+| E3 | Auth UI (login/registro) y sesión persistente (`SessionStore`) | 6 | E2, E6 | Login real contra API; sesión sobrevive reinicio; logout limpio |
 | E4 | Integración E2E, builds Android/web/Linux, deploy API/DB/web, APK | 7 | E3, D3, A3 | URL web pública, APK instalable, API accesible desde otro dispositivo |
 | E5 | Coordinación, reporte técnico, presentación y ensayo de defensa | 4 | todas | Reporte completo y demo ensayada sin errores críticos |
+| E6 | Backend de autenticación: `/auth/register`, `/auth/login`, JWT, bcryptjs y middleware de roles + tests | 3 | A0, D1 | Registro (siempre rol `usuario`) y login devuelven JWT; el middleware responde 401/403; probado con curl/supertest |
 
 **Extra transversal:** mantiene `README.md` y CI; revisa PRs de Diana y Alonso.
 
-### 4.2 Diana — 33 puntos
+### 4.2 Diana — 33 puntos (D1 8 + D2 6 + D3 8 + D4 6 + D5 3 + D6 2)
 
 | ID | Tarea | Pts | Depende de | Criterio de aceptación |
 | --- | --- | ---: | --- | --- |
 | D1 | Modelo de datos: `schema.sql`, `seed.sql`, ER, índices, integridad | 8 | E1 | Base carga limpia; FKs/CHECK funcionan; seed reproducible |
-| D2 | Backend auth/usuarios/roles/categorías + validaciones + tests | 9 | D1 | Registro, login, `/me`, roles y categorías probados con curl/supertest |
-| D3 | Listado Flutter con búsqueda, filtros, paginación y caché local/offline | 8 | E2, D2 | Lista datos reales; filtros; sin red muestra caché y aviso |
+| D2 | Backend de usuarios, roles y categorías (`/auth/me`, `/users`, `/categories`) + validaciones con Zod + tests | 6 | D1, A0, E6 | `/auth/me`, usuarios, roles y categorías probados con curl/supertest |
+| D3 | Listado Flutter con búsqueda, filtros, paginación y caché local/offline | 8 | E2, E6 | Lista datos reales; filtros; sin red muestra caché y aviso |
 | D4 | Detalle Flutter: datos, evidencias, historial y mapa | 6 | D3, A1 | Detalle completo, permisos correctos, historial visible |
-| D5 | Documentación de API/BD y pruebas de validaciones | 2 | D2 | `docs/API.md` actualizado; matriz de pruebas firmada |
+| D5 | Documentación de API/BD, pruebas de validaciones y prueba de comunicación 9.1 | 3 | D2 | `docs/API.md` actualizado; matriz de pruebas firmada; evidencia de la prueba 9.1 |
+| D6 | Perfil y preferencias en Flutter (editar nombre/contraseña, tema) | 2 | E3, D2 | Perfil editable contra `/users/me`; preferencia de tema persiste |
 
 **Extra transversal:** revisa PRs de Edson y Alonso; apoya seed y consultas SQL.
 
-### 4.3 Alonso — 33 puntos
+### 4.3 Alonso — 34 puntos
 
 | ID | Tarea | Pts | Depende de | Criterio de aceptación |
 | --- | --- | ---: | --- | --- |
-| A1 | Backend inspecciones, evidencias, historial, máquina de estados y regla | 11 | D1, D2 | CRUD, transiciones válidas, finalización bloqueada sin resultado/condición, uploads |
+| A0 | Esqueleto del backend: Express, `/api/health` y `/api/health/db`, conexión a MySQL, manejo de errores, `.env.example` y `Dockerfile` | 2 | E1 | `npm run dev` responde `/api/health`; `.env.example` documentado; prueba de humo en verde |
+| A1 | Backend inspecciones, evidencias, historial, máquina de estados y regla | 11 | D1, A0, E6 | CRUD, transiciones válidas, finalización bloqueada sin resultado/condición, uploads |
 | A2 | Formulario Flutter crear/editar + validaciones | 6 | E2, A1 | Crea y edita; errores de validación claros; permisos respetados |
 | A3 | Recursos móviles: cámara/galería, geolocalización/mapa, permisos, acelerómetro, gestos y animaciones | 8 | A2 | Evidencia fotográfica, coordenadas, inclinación registrada y demo en Android |
 | A4 | Panel operador: asignar, iniciar, finalizar, cancelar | 6 | A1, D3 | Flujo completo desde UI; regla de negocio visible y aplicada |
-| A5 | Pruebas de recursos/comunicación y apoyo en despliegue | 2 | A3, A4 | Evidencias de pruebas 9.1 y 9.4; bugs críticos cerrados |
+| A5 | Pruebas de recursos móviles y apoyo en despliegue | 1 | A3, A4 | Evidencia de la prueba 9.4; bugs críticos cerrados |
 
 **Extra transversal:** revisa PRs de Edson y Diana; mantiene el mapa y permisos Android.
 
@@ -175,6 +184,7 @@ aislados: todos tocan Flutter, API, pruebas y documentación.
 - `chore(repo): crear organización, repositorio y protecciones`
 - `chore(github): configurar Projects, labels y milestones`
 - `feat(db): schema inicial y seed`
+- `feat(backend): esqueleto Express con /health y manejo de errores`
 - `chore(ci): pipeline Flutter + backend`
 - `feat(flutter): tema, navegación y pantallas placeholder`
 - `docs: plan, arquitectura y contrato de API`
@@ -211,13 +221,16 @@ aislados: todos tocan Flutter, API, pruebas y documentación.
 ## 6. Dependencias y ruta crítica
 
 ```text
-E1 → D1 → D2 → A1 → A2 → A3 → A4
-E1 → E2 → E3 → D3 → D4
+E1 → A0 ─┬→ E6 → A1 → A2 → A3 → A4
+E1 → D1 ─┘     └→ D2
+E1 → E2 → E3 (también necesita E6) → D3 → D4
 E2 → A2
+E3 + D2 → D6
 D3 + A3 + A4 → E4 → E5
 ```
 
-- Si D1 se retrasa, bloquea D2, A1 y todas las pantallas con datos.
+- A0 y D1 se pueden hacer **en paralelo** (Alonso y Diana); E6 y D2 esperan a ambas.
+- Si D1 o A0 se retrasan, bloquean E6, D2, A1 y todas las pantallas con datos.
 - Si A1 se retrasa, el panel operador y la regla de negocio no pueden probarse.
 - E2 debe cerrarse temprano: es la base de todas las pantallas.
 
@@ -292,7 +305,7 @@ Una tarea solo se cierra si:
 | Criterio del PDF | Pts | Dónde se evidencia |
 | --- | ---: | --- |
 | Flutter, UI, navegación, estado | 20 | E2, E3, D3, D4, A2, A4 |
-| Backend, API, auth, validaciones, DB | 25 | D1, D2, A1, E4 |
+| Backend, API, auth, validaciones, DB | 25 | D1, D2, A0, A1, E6, E4 |
 | Comunicación, offline, errores | 15 | D3, A1, A3, E4, pruebas 9.1–9.3 |
 | Recursos móviles, gestos, animaciones, responsive | 15 | A3, E2, A4 |
 | GitHub, Issues, Projects, PRs, colaboración | 15 | E1 + actividad diaria de los tres |
