@@ -124,9 +124,9 @@ todos tocan Flutter, API, pruebas y documentación.
 | --- | --- | ---: | --- | --- |
 | E1 | Repo, organización, protecciones, labels, Projects, plantillas, CI | 6 | — | `main` protegida, CI verde, Issues/PR templates y tablero de 4 columnas |
 | E2 | Core Flutter: tema, navegación responsiva, `ApiClient`, storage, modelos base, widgets | 9 | E1 | App compila; `flutter analyze` limpio; patrón documentado |
-| E3 | Auth UI (login/registro) y sesión persistente (`SessionStore`) | 6 | E2, E6 | Login real contra API; sesión sobrevive reinicio; logout limpio |
-| E4 | Integración E2E, builds Android/web/Linux, deploy API/DB/web, APK | 7 | E3, D3, A3 | URL web pública, APK instalable, API accesible desde otro dispositivo |
-| E5 | Coordinación, reporte técnico, presentación y ensayo de defensa | 4 | todas | Reporte completo y demo ensayada sin errores críticos |
+| E3 | Auth UI (login/registro), sesión persistente (`SessionStore`) y pantalla principal con conteos | 6 | E2, E6 | Login real contra API; sesión sobrevive reinicio; logout limpio; la pantalla principal muestra los conteos de `/inspections/stats/summary` (endpoint de A1; con datos falsos hasta que exista) |
+| E4 | Integración E2E, builds Android/web/Linux, deploy API/DB/web, APK | 7 | E3, D3, A3 | URL web pública, APK instalable, API accesible desde otro dispositivo; evidencia de la prueba 9.2 (persistencia tras reiniciar el servidor desplegado) |
+| E5 | Coordinación, reporte técnico, presentación y ensayo de defensa | 4 | todas | Reporte completo, README de instalación y ejecución consolidado, y demo ensayada sin errores críticos |
 | E6 | Backend de autenticación: `/auth/register`, `/auth/login`, JWT, bcryptjs y middleware de roles + tests | 3 | A0, D1 | Registro (siempre rol `usuario`) y login devuelven JWT; el middleware responde 401/403; probado con curl/supertest |
 
 **Extra transversal:** mantiene `README.md` y CI; revisa PRs de Diana y Alonso.
@@ -135,9 +135,9 @@ todos tocan Flutter, API, pruebas y documentación.
 
 | ID | Tarea | Pts | Depende de | Criterio de aceptación |
 | --- | --- | ---: | --- | --- |
-| D1 | Modelo de datos: `schema.sql`, `seed.sql`, ER, índices, integridad | 8 | E1 | Base carga limpia; FKs/CHECK funcionan; seed reproducible |
+| D1 | Modelo de datos: `schema.sql`, `seed.sql`, ER, índices, integridad y `docker-compose.yml` de desarrollo | 8 | E1 | Base carga limpia con `docker compose up -d db`; FKs/CHECK funcionan; seed reproducible con usuarios de prueba (contraseñas con hash bcrypt) documentados |
 | D2 | Backend de usuarios, roles y categorías (`/auth/me`, `/users`, `/categories`) + validaciones con Zod + tests | 6 | D1, A0, E6 | `/auth/me`, usuarios, roles y categorías probados con curl/supertest |
-| D3 | Listado Flutter con búsqueda, filtros, paginación y caché local/offline | 8 | E2, E6 | Lista datos reales; filtros; sin red muestra caché y aviso |
+| D3 | Listado Flutter con búsqueda, filtros, paginación y caché local/offline | 8 | E2, E6 | Lista datos reales; filtros; sin red muestra caché y aviso; evidencia de la prueba 9.3 (conexión interrumpida y restaurada) |
 | D4 | Detalle Flutter: datos, evidencias, historial y mapa | 6 | D3, A1 | Detalle completo, permisos correctos, historial visible |
 | D5 | Documentación de API/BD, pruebas de validaciones y prueba de comunicación 9.1 | 3 | D2 | `docs/API.md` actualizado; matriz de pruebas firmada; evidencia de la prueba 9.1 |
 | D6 | Perfil y preferencias en Flutter (editar nombre/contraseña, tema) | 2 | E3, D2 | Perfil editable contra `/users/me`; preferencia de tema persiste |
@@ -148,8 +148,8 @@ todos tocan Flutter, API, pruebas y documentación.
 
 | ID | Tarea | Pts | Depende de | Criterio de aceptación |
 | --- | --- | ---: | --- | --- |
-| A0 | Esqueleto del backend: Express, `/api/health` y `/api/health/db`, conexión a MySQL, manejo de errores, `.env.example` y `Dockerfile` | 2 | E1 | `npm run dev` responde `/api/health`; `.env.example` documentado; prueba de humo en verde |
-| A1 | Backend inspecciones, evidencias, historial, máquina de estados y regla | 11 | D1, A0, E6 | CRUD, transiciones válidas, finalización bloqueada sin resultado/condición, uploads |
+| A0 | Esqueleto del backend: Express, `/api/health` y `/api/health/db`, conexión a MySQL, manejo de errores, `.env.example` y `Dockerfile` | 2 | E1 | `npm run dev` responde `/api/health`; `.env.example` documentado; prueba de humo en verde; job de backend (`npm test`) agregado al workflow de CI |
+| A1 | Backend inspecciones, evidencias, historial, máquina de estados, regla y `/inspections/stats/summary` | 11 | D1, A0, E6 | CRUD, transiciones válidas, finalización bloqueada sin resultado/condición, uploads, conteos para la pantalla principal |
 | A2 | Formulario Flutter crear/editar + validaciones | 6 | E2, A1 | Crea y edita; errores de validación claros; permisos respetados |
 | A3 | Recursos móviles: cámara/galería, geolocalización/mapa, permisos, acelerómetro, gestos y animaciones | 8 | A2 | Evidencia fotográfica, coordenadas, inclinación registrada y demo en Android |
 | A4 | Panel operador: asignar, iniciar, finalizar, cancelar | 6 | A1, D3 | Flujo completo desde UI; regla de negocio visible y aplicada |
