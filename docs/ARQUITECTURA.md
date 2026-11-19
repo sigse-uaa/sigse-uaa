@@ -52,8 +52,8 @@ Principios:
 
 | Capa | Responsabilidad | Ejemplos |
 | --- | --- | --- |
-| `core/` | Infraestructura transversal | `ApiClient`, `SessionStore`, tema, constantes, validadores |
-| `features/<x>/models` | Modelos inmutables con `fromJson`/`toJson` | `Inspection`, `User`, `Category` |
+| `core/` | Infraestructura transversal | `ApiClient`, `LocalStorage`, `AppConfig`, `AppRoutes`, tema, constantes |
+| `features/<x>/models` | Modelos inmutables con `fromJson`/`toJson` | `Inspection`, `Category` |
 | `features/<x>/data` | Repositorios: HTTP + caché | `InspectionsRepository`, `AuthRepository` |
 | `features/<x>/state` | `ChangeNotifier` expuestos con Provider | `AuthProvider`, `InspectionsProvider` |
 | `features/<x>/screens` | Pantallas | `LoginScreen`, `InspectionDetailScreen` |
@@ -87,9 +87,12 @@ construye URLs ni maneja `http` directamente.
 
 - URL base desde `--dart-define=API_BASE_URL`.
 - Inyección del token `Bearer`.
-- Timeout (15 s), parseo JSON y `multipart/form-data`.
+- Timeout (20 s), parseo JSON y `multipart/form-data`.
+- En emulador Android la URL local es `http://10.0.2.2:3000/api`; en web/escritorio es
+  `http://localhost:3000/api`.
 - Traducción de errores a `ApiException` con mensaje amigable.
-- Detección de `401` para cerrar sesión y volver al login.
+- Detección de `401` para cerrar sesión y volver al login. `ApiClient` solo lanza
+  `ApiException` con `statusCode`; quien decide cerrar sesión es `AuthProvider` (tarea E3).
 - `SocketException`/`TimeoutException`/`ClientException` → mensaje “sin conexión”.
 
 Formato de error del backend:
@@ -100,7 +103,8 @@ Formato de error del backend:
 
 ### 2.5 Persistencia local y offline
 
-- `SessionStore` (envoltura de `shared_preferences`):
+- `LocalStorage` (envoltura de `shared_preferences`, **ya implementada** en `core/storage/`) y,
+  sobre ella, `SessionStore` (**pendiente, se crea en la tarea E3** junto con la auth UI):
   - `auth_token`, `auth_user`, `theme_mode`.
   - `cache_inspections_<userId>`: últimos resultados JSON.
   - `last_sync_<userId>`: marca de tiempo.
