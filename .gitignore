@@ -20,8 +20,6 @@ backend/.npm/
 backend/coverage/
 backend/uploads/*
 !backend/uploads/.gitkeep
-!backend/uploads/demo-senal.png
-!backend/uploads/demo-botiquin.png
 
 # --- Flutter / Dart ---
 app/.dart_tool/

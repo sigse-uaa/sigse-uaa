@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/home/presentation/home_page.dart';
+import 'features/shell/presentation/app_shell.dart';
 
 class SigseApp extends StatelessWidget {
   const SigseApp({super.key});
@@ -12,7 +12,7 @@ class SigseApp extends StatelessWidget {
       title: 'SIGSE',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const HomePage(),
+      home: const AppShell(),
     );
   }
 }
