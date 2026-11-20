@@ -19,3 +19,10 @@ test('loadAuthConfig usa 8 horas de vigencia por defecto', () => {
     '1h',
   );
 });
+
+test('loadAuthConfig rechaza en producción el secreto de ejemplo de .env.example', () => {
+  const example = 'cambia-este-secreto-de-desarrollo-por-uno-largo-y-aleatorio';
+
+  assert.throws(() => loadAuthConfig({ JWT_SECRET: example, NODE_ENV: 'production' }), /ejemplo/);
+  assert.equal(loadAuthConfig({ JWT_SECRET: example }).jwtSecret, example);
+});

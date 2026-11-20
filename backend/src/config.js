@@ -1,4 +1,6 @@
 const MIN_SECRET_LENGTH = 32;
+// Prefijo del valor de ejemplo de .env.example: sirve en local, pero nunca en producción.
+const EXAMPLE_SECRET_PREFIX = 'cambia-este-secreto';
 
 /**
  * Lee y valida la configuración de autenticación. Falla al arrancar si falta
@@ -10,6 +12,9 @@ function loadAuthConfig(env = process.env) {
     throw new Error(
       `JWT_SECRET es obligatorio y debe tener al menos ${MIN_SECRET_LENGTH} caracteres.`,
     );
+  }
+  if (env.NODE_ENV === 'production' && secret.startsWith(EXAMPLE_SECRET_PREFIX)) {
+    throw new Error('JWT_SECRET sigue siendo el valor de ejemplo: genera uno propio para producción.');
   }
   return {
     jwtSecret: secret,
