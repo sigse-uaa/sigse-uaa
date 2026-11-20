@@ -1,8 +1,9 @@
 const { createApp } = require('./app');
+const { buildCorsOptions } = require('./cors');
 const { pool, checkDatabase } = require('./database');
 
 const port = Number(process.env.PORT || '3000');
-const app = createApp({ checkDatabase });
+const app = createApp({ checkDatabase, corsOptions: buildCorsOptions() });
 const server = app.listen(port, () => {
   console.log(`SIGSE API disponible en el puerto ${server.address().port}`);
 });

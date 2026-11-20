@@ -1,11 +1,17 @@
+const cors = require('cors');
 const express = require('express');
+const helmet = require('helmet');
 const { ApiError, handleError } = require('./errors');
 
-function createApp({ checkDatabase }) {
+function createApp({ checkDatabase, corsOptions }) {
   const app = express();
   const api = express.Router();
 
   app.disable('x-powered-by');
+  // Las evidencias (/uploads) se mostrarán desde la web de Flutter, que está en
+  // otro origen: sin esto helmet bloquearía las imágenes.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(cors(corsOptions));
   app.use(express.json());
 
   api.get('/health', (_request, response) => {
