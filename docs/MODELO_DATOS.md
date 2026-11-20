@@ -9,7 +9,7 @@ Motor: **MySQL 8** · InnoDB · `utf8mb4_unicode_ci` · fechas en UTC.
 ```mermaid
 erDiagram
   USERS ||--o{ INSPECTIONS : "crea"
-  USERS ||--o{ INSPECTIONS : "atiende (assigned_to)"
+  USERS |o--o{ INSPECTIONS : "atiende (assigned_to)"
   USERS ||--o{ EVIDENCES : "sube"
   USERS ||--o{ INSPECTION_HISTORY : "modifica"
   CATEGORIES ||--o{ INSPECTIONS : "clasifica"
@@ -23,8 +23,8 @@ erDiagram
     VARCHAR password_hash
     ENUM role "usuario | operador"
     BOOLEAN is_active
-    DATETIME created_at
-    DATETIME updated_at
+    TIMESTAMP created_at
+    TIMESTAMP updated_at
   }
 
   CATEGORIES {
@@ -34,8 +34,8 @@ erDiagram
     VARCHAR color
     VARCHAR icon
     BOOLEAN is_active
-    DATETIME created_at
-    DATETIME updated_at
+    TIMESTAMP created_at
+    TIMESTAMP updated_at
   }
 
   INSPECTIONS {
@@ -56,12 +56,12 @@ erDiagram
     DECIMAL tilt_degrees
     TEXT review_result "nullable"
     ENUM final_condition "nullable"
-    DATETIME assigned_at
-    DATETIME started_at
-    DATETIME finished_at
-    DATETIME cancelled_at
-    DATETIME created_at
-    DATETIME updated_at
+    TIMESTAMP assigned_at
+    TIMESTAMP started_at
+    TIMESTAMP finished_at
+    TIMESTAMP cancelled_at
+    TIMESTAMP created_at
+    TIMESTAMP updated_at
   }
 
   EVIDENCES {
@@ -74,7 +74,7 @@ erDiagram
     VARCHAR mime_type
     INT size_bytes
     VARCHAR description
-    DATETIME created_at
+    TIMESTAMP created_at
   }
 
   INSPECTION_HISTORY {
@@ -85,7 +85,7 @@ erDiagram
     ENUM previous_status "nullable"
     ENUM new_status "nullable"
     TEXT comment
-    DATETIME created_at
+    TIMESTAMP created_at
   }
 ```
 
