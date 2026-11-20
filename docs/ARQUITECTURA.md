@@ -158,12 +158,15 @@ Permisos Android en `AndroidManifest.xml`: `INTERNET`, `CAMERA`,
 ```text
 server.js  → arranque HTTP
 app.js     → middlewares globales + montaje de rutas (exportado para tests)
-routes     → define endpoints y aplica auth/roles/validación
-controllers→ traduce HTTP ↔ servicios, arma respuestas
-services   → reglas de negocio y SQL
-middleware → authenticate, authorize, validate, upload, errorHandler
-config     → env, pool MySQL
-validators → esquemas Zod
+routes       → define endpoints y aplica auth/roles/validación
+controllers  → traduce HTTP ↔ servicios, arma respuestas
+services     → reglas de negocio (sin SQL)
+repositories → acceso a MySQL, consultas parametrizadas (permite probar servicios sin base)
+middleware   → authenticate, authorize, validate, upload, errorHandler
+config.js    → lectura y validación de variables de entorno (p. ej. JWT_SECRET)
+serializers.js → única traducción fila (snake_case) → JSON (camelCase)
+validators   → esquemas Zod
+testing/     → ayudantes de pruebas (repositorios en memoria); no se publica en Docker
 utils      → ApiError, asyncHandler, paginación, folios
 ```
 
@@ -171,7 +174,9 @@ utils      → ApiError, asyncHandler, paginación, folios
 
 - Registro público: siempre crea `usuario` (nunca permite elegir rol).
 - Login: verifica bcrypt y firma JWT `{ sub, role }` con expiración de 8 h.
-- Middleware `authenticate`: valida firma, consulta usuario activo y adjunta `req.user`.
+- Middleware `authenticate`: valida firma (solo HS256), consulta al usuario en la base y adjunta `req.user` `{ id, name, email, role }`. **El rol sale de la base, no del token**, y un usuario dado de baja pierde el acceso al instante.
+- El servidor **no arranca** sin `JWT_SECRET` de al menos 32 caracteres.
+- Login: correo inexistente y contraseña incorrecta dan la misma respuesta `401` (y se compara un hash falso para igualar tiempos).
 - Middleware `authorize('operador')`: rechaza con `403`.
 - Reglas de propiedad se validan en el servicio (dueño vs operador).
 
@@ -559,4 +564,4 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 | Servicio de hosting definitivo | Recomendado: VPS único; confirmar proveedor en Sprint 3 | Edson |
 | Volumen persistente vs Cloudinary | Recomendado: volumen Docker en el VPS | Edson + Alonso |
 | Firma del APK | Por definir | Edson |
-| Rate limiting | Opcional si hay tiempo | Diana |
+| Rate limiting del login | Pendiente: E6 no lo incluye; recomendado antes de publicar (p. ej. `express-rate-limit` en `/auth/login`) | Diana |
