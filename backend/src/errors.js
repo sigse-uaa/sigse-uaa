@@ -3,6 +3,7 @@ class ApiError extends Error {
     super(message, options);
     this.status = status;
     this.code = code;
+    this.details = options?.details ?? [];
   }
 }
 
@@ -16,25 +17,25 @@ function handleError(error, _request, response, next) {
       console.error('Falló la consulta de salud de MySQL:', error.cause?.code ?? 'UNKNOWN');
     }
     return response.status(error.status).json({
-      error: { code: error.code, message: error.message },
+      error: { code: error.code, message: error.message, details: error.details },
     });
   }
 
   if (error.type === 'entity.parse.failed') {
     return response.status(400).json({
-      error: { code: 'INVALID_JSON', message: 'El cuerpo de la solicitud no es JSON válido.' },
+      error: { code: 'INVALID_JSON', message: 'El cuerpo de la solicitud no es JSON válido.', details: [] },
     });
   }
 
   if (error.type === 'entity.too.large') {
     return response.status(413).json({
-      error: { code: 'PAYLOAD_TOO_LARGE', message: 'El cuerpo de la solicitud es demasiado grande.' },
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'El cuerpo de la solicitud es demasiado grande.', details: [] },
     });
   }
 
   console.error(error);
   return response.status(500).json({
-    error: { code: 'INTERNAL_ERROR', message: 'Ocurrió un error interno.' },
+    error: { code: 'INTERNAL_ERROR', message: 'Ocurrió un error interno.', details: [] },
   });
 }
 
