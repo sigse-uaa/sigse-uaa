@@ -48,6 +48,7 @@ test('GET /health/db devuelve 503 sin exponer detalles de MySQL', async (t) => {
     error: {
       code: 'DATABASE_UNAVAILABLE',
       message: 'La base de datos no está disponible.',
+      details: [],
     },
   });
 });
