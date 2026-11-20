@@ -7,8 +7,8 @@
 vez que se sube una rama o se abre una solicitud de cambios. Corre tareas como
 `flutter analyze`, `flutter test` y `npm test`; si algo falla, la solicitud no se integra.
 No es un servidor adicional ni algo que haya que pagar: usa GitHub Actions, incluido en GitHub.
-El workflow de Flutter ya está en `.github/workflows/ci.yml`; el de backend se agregará cuando
-exista `backend/`.
+El workflow `.github/workflows/ci.yml` ejecuta las verificaciones de Flutter y las pruebas del backend
+en jobs separados.
 
 Esta guía aplica a los tres integrantes y también al docente cuando revise el historial.
 

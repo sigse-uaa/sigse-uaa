@@ -36,6 +36,7 @@
 | `409` | Conflicto (correo duplicado, categoría duplicada) |
 | `422` | Validación o regla de negocio incumplida |
 | `500` | Error no controlado |
+| `503` | MySQL no está disponible para la comprobación de salud |
 
 ---
 
@@ -64,7 +65,7 @@ Los permisos **siempre** se validan en el backend.
 { "status": "ok", "database": "connected" }
 ```
 
-Devuelve `503` si MySQL no responde.
+Devuelve `503` con el código `DATABASE_UNAVAILABLE` si MySQL no responde.
 
 ---
 
