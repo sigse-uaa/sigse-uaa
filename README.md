@@ -6,12 +6,12 @@ rutas de circulación y elementos de seguridad en espacios universitarios.
 Proyecto final de **Programación de Dispositivos Móviles** — Ingeniería en Sistemas
 Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascalientes.
 
-> **Estado actual: base de planeación + core Flutter mínimo.** El repositorio contiene los
+> **Estado actual: planeación, core Flutter mínimo y base de datos local.** El repositorio contiene los
 > requisitos, la arquitectura propuesta, el contrato de API, el plan de pruebas, el reparto de
 > trabajo, las plantillas de GitHub, CI de Flutter y un proyecto que ya compila con
 > infraestructura compartida (`ApiClient`, almacenamiento local, rutas y modelo `User`).
-> **Todavía no incluye backend, base de datos ni funcionalidades de negocio**; eso comienza en
-> el Sprint 1 y se reparte entre los tres integrantes.
+> La base de datos de desarrollo se inicializa con MySQL 8.4, el esquema y el seed de prueba.
+> El backend y las funciones de negocio se implementan en el Sprint 1.
 
 | Campo | Valor |
 | --- | --- |
@@ -98,9 +98,8 @@ en `docs/ARQUITECTURA.md`.
 └── docker-compose.yml        # MySQL local reproducible (Sprint 0–1)
 ```
 
-La base actual contiene `app/` con infraestructura compartida, una pantalla inicial y pruebas;
-aún no tiene lógica de negocio. **No** contiene `backend/`, `database/` ni `docker-compose.yml`;
-se agregarán por los responsables indicados en el plan, mediante Issues y PRs.
+El repositorio incluye `app/` con la infraestructura compartida, una pantalla inicial y pruebas.
+También incluye `database/` y `docker-compose.yml` para levantar MySQL en desarrollo.
 
 Plataformas generadas: **Android, web y Linux**. iOS no está incluido porque el PDF no lo exige;
 si se necesita, se puede agregar después con macOS + Xcode o un servicio de CI con macOS.
@@ -157,6 +156,85 @@ await storage.writeJson(StorageKeys.user, user.toJson());
 Diana puede avanzar con **D1/D2** sin esperar esta base; para **D3** ya tiene el cliente HTTP,
 el almacenamiento local y el modelo `User`. Los cambios en `core/` entran por PR.
 
+### 4.3 Levantar MySQL para desarrollo
+
+Abre una terminal en la raíz del repositorio, donde están `docker-compose.yml` y `.env.example`.
+En Windows, abre Docker Desktop y espera a que arranque. Comprueba que Compose esté disponible
+con `docker compose version`.
+
+**1. Prepara las variables locales.** Si todavía no tienes un archivo `.env`, crea una copia del
+ejemplo:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+En Bash, el equivalente es `cp .env.example .env`. Si ya tienes un `.env`, ábrelo y comprueba que
+incluya las siguientes variables. Git ignora el archivo local.
+
+| Variable | Para qué se usa |
+| --- | --- |
+| `SQL_DB` | Nombre de la base de datos. Usa `sigse` para seguir los ejemplos. |
+| `SQL_PORT` | Dirección y puerto publicados en tu equipo. Usa `127.0.0.1:3306` para limitar el acceso a tu equipo. |
+| `SQL_USER` | Usuario de MySQL con el que se conecta el backend. |
+| `SQL_PASSWORD` | Contraseña del usuario de MySQL. |
+| `SQL_PASSWORD_ROOT` | Contraseña de la cuenta administradora de MySQL. |
+
+**2. Inicia el servicio.**
+
+```bash
+docker compose config --quiet
+docker compose up -d db
+docker compose logs -f db
+```
+
+En el primer arranque con un volumen vacío, MySQL crea la base indicada en `SQL_DB` y ejecuta
+`database/schema.sql` antes de `database/seed.sql`. Compose monta ambos archivos en
+`/docker-entrypoint-initdb.d` con los prefijos `01` y `02`, respectivamente. La inicialización
+puede tardar unos segundos. Espera a que los logs indiquen que terminó y que MySQL está listo
+para conexiones. Pulsa **Ctrl+C** para dejar de ver los logs. El servicio sigue en ejecución.
+
+**3. Comprueba que cargaron las tablas y los datos.** Sustituye `TU_USUARIO_SQL` por el valor
+de `SQL_USER`. Cuando MySQL pida la contraseña, escribe la configurada en `SQL_PASSWORD`.
+
+```bash
+docker compose exec db mysql -u TU_USUARIO_SQL -p sigse
+```
+
+Dentro de MySQL, ejecuta:
+
+```sql
+SHOW TABLES;
+SELECT id, name FROM categories ORDER BY id;
+SELECT role, COUNT(*) AS total FROM users GROUP BY role;
+```
+
+Deben aparecer cinco tablas, cinco categorías, dos operadores y un usuario general. Escribe
+`exit` para volver a la terminal. Las cuentas para entrar a SIGSE están en
+[Cuentas de prueba de SIGSE](#cuentas-de-prueba-de-sigse).
+
+**4. Reinicia la base solo cuando quieras descartar sus datos.** Para detener el servicio y
+conservar lo guardado, usa `docker compose stop db`. Si cambiaste el esquema o el seed y
+quieres volver a cargarlos desde cero, ejecuta desde la raíz del repo:
+
+```bash
+docker compose down -v && docker compose up -d db
+```
+
+En Windows PowerShell 5.1, usa:
+
+```powershell
+docker compose down -v
+if ($LASTEXITCODE -eq 0) { docker compose up -d db }
+```
+
+**`down -v` borra los volúmenes del proyecto y con ellos los datos locales de MySQL.**
+Al arrancar otra vez, MySQL crea un volumen vacío y vuelve a cargar ambos SQL.
+
+Si el arranque falla, revisa `docker compose logs --tail=100 db`. Si Docker indica que el
+puerto 3306 está ocupado o que el nombre del contenedor ya existe, ejecuta `docker ps -a`
+para identificar el otro contenedor antes de intervenir.
+
 ---
 
 ## 5. Flujo de trabajo
@@ -185,11 +263,23 @@ Comandos y configuración paso a paso: [`docs/GIT_WORKFLOW.md`](docs/GIT_WORKFLO
 
 ## 7. Seguridad y buenas prácticas
 
-- **No** subir `.env`, tokens, contraseñas, llaves privadas ni archivos de `uploads/`.
+- Mantener fuera de Git el `.env` local, los tokens, las contraseñas reales, las llaves privadas y los archivos de `uploads/`.
 - Permisos y reglas de negocio se validan **en el backend**, no solo en la UI.
 - Contraseñas con bcrypt; sesiones con JWT de expiración corta.
 - Validar y sanitizar toda entrada con Zod; consultas parametrizadas con `mysql2`.
 - CORS restringido por variable de entorno en producción.
+
+### Cuentas de prueba de SIGSE
+
+El seed de desarrollo crea estas cuentas para probar el inicio de sesión en SIGSE con el backend conectado a la base local.
+
+| Rol | Correo |
+| --- | --- |
+| Operador | `operador1@example.com` |
+| Operador | `operador2@example.com` |
+| Usuario general | `usuario@example.com` |
+
+La contraseña compartida de las tres cuentas es `SigseDemo2026!`. Estas credenciales ficticias son exclusivas de desarrollo y pruebas.
 
 ---
 

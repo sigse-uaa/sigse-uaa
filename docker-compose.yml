@@ -1,0 +1,27 @@
+services:
+
+  db:
+    image: mysql:8.4
+    container_name: mysql_dataDBSU
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD_ROOT}
+      MYSQL_DATABASE: ${SQL_DB}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+
+    ports:
+      - "${SQL_PORT}:3306"
+    
+    
+    volumes:
+      - mysql_dataDB:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+#REcuerda los volumenes primero van de donde a donde tomamos schema y seed por eso es ./seed y ./schema
+#el primer mysql_data1 es donde se va a guadrar las cosas 
+    restart: unless-stopped
+
+
+volumes:
+  mysql_dataDB:
