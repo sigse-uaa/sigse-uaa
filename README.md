@@ -6,12 +6,12 @@ rutas de circulación y elementos de seguridad en espacios universitarios.
 Proyecto final de **Programación de Dispositivos Móviles** — Ingeniería en Sistemas
 Computacionales, Centro de Ciencias Básicas, Universidad Autónoma de Aguascalientes.
 
-> **Estado actual: planeación, core Flutter mínimo y base de datos local.** El repositorio contiene los
+> **Estado actual: core Flutter, API de salud y base de datos local.** El repositorio contiene los
 > requisitos, la arquitectura propuesta, el contrato de API, el plan de pruebas, el reparto de
-> trabajo, las plantillas de GitHub, CI de Flutter y un proyecto que ya compila con
+> trabajo, las plantillas de GitHub, CI de Flutter y del backend, y una app Flutter con
 > infraestructura compartida (`ApiClient`, almacenamiento local, rutas y modelo `User`).
 > La base de datos de desarrollo se inicializa con MySQL 8.4, el esquema y el seed de prueba.
-> El backend y las funciones de negocio se implementan en el Sprint 1.
+> La API Express incluye las rutas de salud. Las funciones de negocio se implementan en los sprints siguientes.
 
 | Campo | Valor |
 | --- | --- |
@@ -91,10 +91,10 @@ en `docs/ARQUITECTURA.md`.
 │   ├── android/              # plataforma Android
 │   ├── web/                  # plataforma web
 │   └── linux/                # plataforma Linux
-├── backend/                  # API Node.js + Express (Sprint 1)
+├── backend/                  # API Node.js + Express y pruebas de salud
 ├── database/                 # schema.sql, seed.sql y notas (Sprint 0–1)
 ├── docs/                     # requisitos, plan, arquitectura, API, pruebas, reporte
-├── .github/                  # plantillas de Issues/PR y CI de Flutter
+├── .github/                  # plantillas de Issues/PR y CI de Flutter y Node.js
 └── docker-compose.yml        # MySQL local reproducible (Sprint 0–1)
 ```
 
@@ -179,6 +179,7 @@ incluya las siguientes variables. Git ignora el archivo local.
 | `SQL_USER` | Usuario de MySQL con el que se conecta el backend. |
 | `SQL_PASSWORD` | Contraseña del usuario de MySQL. |
 | `SQL_PASSWORD_ROOT` | Contraseña de la cuenta administradora de MySQL. |
+| `PORT` | Puerto HTTP de la API Express (por defecto `3000`). |
 
 **2. Inicia el servicio.**
 
@@ -234,6 +235,35 @@ Al arrancar otra vez, MySQL crea un volumen vacío y vuelve a cargar ambos SQL.
 Si el arranque falla, revisa `docker compose logs --tail=100 db`. Si Docker indica que el
 puerto 3306 está ocupado o que el nombre del contenedor ya existe, ejecuta `docker ps -a`
 para identificar el otro contenedor antes de intervenir.
+
+### 4.4 Ejecutar la API Express
+
+Con Node.js 22 (22.9 o posterior), prepara el `.env` de la raíz y levanta MySQL como se indica
+en la sección anterior. Luego, desde la raíz del repositorio, ejecuta:
+
+```bash
+cd backend
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:3000/api/health` para comprobar Express. Después abre
+`http://localhost:3000/api/health/db` para comprobar MySQL. La segunda ruta ejecuta
+`SELECT 1` y devuelve `503` si MySQL no responde.
+
+La API reutiliza `SQL_DB`, `SQL_USER` y `SQL_PASSWORD` del `.env` y toma el número de puerto
+de `SQL_PORT`. Para conexiones con otra configuración, `DB_HOST`, `DB_PORT`, `DB_NAME`,
+`DB_USER` y `DB_PASSWORD` tienen prioridad. Las pruebas de `npm test` en `backend/` simulan
+las respuestas de MySQL y se ejecutan también en GitHub Actions.
+
+Para construir y ejecutar la API en Docker, usa estos comandos desde la raíz con el servicio
+`db` ya iniciado. `sigse-uaa_default` es la red que crea Compose cuando el proyecto se llama
+`sigse-uaa`. Si usas otro nombre de proyecto, cambia el nombre de red.
+
+```bash
+docker build -t sigse-api ./backend
+docker run --rm --network sigse-uaa_default --env-file .env -e DB_HOST=db -e DB_PORT=3306 -e PORT=3000 -p 127.0.0.1:3000:3000 sigse-api
+```
 
 ---
 
