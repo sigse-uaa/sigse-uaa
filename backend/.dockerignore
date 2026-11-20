@@ -4,3 +4,4 @@ coverage
 .env.*
 test
 npm-debug.log*
+testing
