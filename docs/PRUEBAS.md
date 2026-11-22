@@ -145,6 +145,10 @@ Cobertura mínima esperada:
 - Regla de finalización (servicio).
 - Transiciones válidas/inválidas (servicio).
 - Permisos por rol (middleware).
+- A1: creación con folio e historial, permisos de listado y edición, transiciones concurrentes,
+  finalización, subida/descarga/borrado y conteos. El CI levanta MySQL 8.4 para esta suite.
+  En local, configúrala con `A1_TEST_MYSQL_PORT` y `A1_TEST_MYSQL_PASSWORD` apuntando a una
+  instancia de pruebas en `127.0.0.1`. La suite crea un esquema temporal y carga el SQL del repo.
 
 ### Flutter
 

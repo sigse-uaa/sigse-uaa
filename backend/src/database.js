@@ -8,6 +8,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || process.env.SQL_DB || 'sigse',
   user: process.env.DB_USER || process.env.SQL_USER,
   password: process.env.DB_PASSWORD ?? process.env.SQL_PASSWORD,
+  timezone: 'Z',
   connectTimeout: 3000,
 });
 

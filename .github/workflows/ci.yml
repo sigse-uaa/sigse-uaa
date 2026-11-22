@@ -45,6 +45,19 @@ jobs:
     name: Pruebas del backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: sigse-local-test-only
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
     defaults:
       run:
         working-directory: backend
@@ -63,4 +76,7 @@ jobs:
         run: npm ci
 
       - name: Ejecutar pruebas
+        env:
+          A1_TEST_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
+          A1_TEST_MYSQL_PASSWORD: sigse-local-test-only
         run: npm test

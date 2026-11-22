@@ -213,13 +213,14 @@ CHECK (status <> 'finalizada' OR (review_result IS NOT NULL AND final_condition 
 ### 3.5 Evidencias
 
 - `POST /inspections/:id/evidences` con `multipart/form-data`, campo `file`.
-- Multer: disco en `backend/uploads`, nombre aleatorio, límite 8 MB, solo imágenes
-  (`jpeg`, `png`, `webp`, `heic`) y PDF opcional.
-- Se guarda ruta relativa `/uploads/...`; el cliente resuelve contra la URL base.
-- Borrado en cascada de la fila al eliminar la inspección; el archivo físico se limpia en el
-  servicio (best effort).
-- **Riesgo de despliegue:** disco efímero. En producción usar volumen persistente o
-  Cloudinary/S3; documentar la elección.
+- Multer recibe el archivo en un directorio temporal con límite de 8 MB. Antes de guardarlo
+  se verifica su formato por contenido (JPEG, PNG, WebP, HEIC o PDF).
+- La ruta `/uploads/...` se vincula a la evidencia en MySQL. La descarga exige JWT y está
+  restringida al dueño de la inspección o a un operador.
+- El servicio borra los temporales después de procesar la solicitud. Al eliminar una evidencia,
+  confirma el borrado de sus datos y el evento de historial antes de intentar limpiar el disco.
+- En Docker, usa un volumen persistente en `/app/uploads` o configura `UPLOAD_DIR` con otra
+  ruta donde pueda escribir el proceso de Node.
 
 ### 3.6 Validación y errores
 
