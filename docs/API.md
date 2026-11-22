@@ -5,7 +5,7 @@
   (`multipart/form-data`).
 - **Autenticación:** `Authorization: Bearer <jwt>` en todas las rutas marcadas.
 - **Fechas:** ISO 8601 en UTC (`2026-11-18T18:30:00.000Z`).
-- **Evidencias:** `filePath` es relativo (`/uploads/archivo.jpg`); el cliente lo resuelve
+- **Evidencias:** `file_path` es relativo (`/uploads/archivo.jpg`); el cliente lo resuelve
   contra el origen del backend (`http://localhost:3000`).
 
 ---
@@ -16,6 +16,11 @@
 - **API (JSON, query params y valores de `sort`):** `camelCase` (`createdAt`, `categoryId`).
 - La traducción fila → JSON se hace **solo** en `backend/src/serializers.js`; ningún otro
   archivo arma respuestas con nombres de columna.
+- **Pendiente para A1 (#8):** al implementar inspecciones hay que unificar con esta convención
+  el parámetro `sort` (hoy documentado como `created_at`) y `file_path` de la introducción
+  (las respuestas ya usan `filePath`). Lo mismo con el momento en que se genera el `folio`
+  (hoy `MODELO_DATOS.md` dice "NULL hasta asignar"; el ejemplo de `POST /inspections` ya lo
+  devuelve al crear). Se decide en ese PR, no en el de autenticación.
 - Los **valores de dominio** (estados como `en_proceso`, acciones como `cambio_estado`,
   roles, prioridades) no cambian: son datos, no nombres de campo.
 
@@ -248,7 +253,7 @@ Lista paginada. El usuario general solo ve las suyas; el operador ve todas.
 | `from` / `to` | ISO date | — | Rango de creación |
 | `page` | int | 1 | Página |
 | `limit` | int | 20 | Máx. 50 |
-| `sort` | enum | `createdAt` | `createdAt`, `updatedAt`, `priority` |
+| `sort` | enum | `created_at` | `created_at`, `updated_at`, `priority` |
 | `order` | enum | `desc` | `asc`, `desc` |
 
 **200**

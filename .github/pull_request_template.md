@@ -23,7 +23,7 @@ Closes #
 
 ## Verificación
 
-- [ ] `cd backend && npm run lint && npm test`
+- [ ] `cd backend && npm test`
 - [ ] `cd app && flutter analyze && flutter test`
 - [ ] Probado manualmente (describir abajo)
 - [ ] Regla de finalización validada si aplica (`review_result` + `final_condition`)

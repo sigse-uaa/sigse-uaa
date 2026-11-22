@@ -126,7 +126,7 @@ informativa.
 | Columna | Tipo | Restricciones | Descripción |
 | --- | --- | --- | --- |
 | `id` | BIGINT UNSIGNED | PK, AUTO_INCREMENT | Identificador |
-| `folio` | VARCHAR(24) | UNIQUE; el backend lo genera **al crear** la inspección (la columna admite `NULL` solo por el `INSERT` previo a generarlo) | `SIG-2026-00001` |
+| `folio` | VARCHAR(24) | UNIQUE, NULL hasta asignar | `SIG-2026-00001` |
 | `title` | VARCHAR(150) | NOT NULL | Resumen del hallazgo |
 | `description` | TEXT | NOT NULL | Observaciones del usuario |
 | `category_id` | INT UNSIGNED | FK `categories.id`, NOT NULL | Clasificación |

@@ -164,7 +164,7 @@ Cobertura mínima esperada:
 
 ```bash
 cd app && flutter analyze
-cd backend && npm run lint   # si existe
+cd backend && npm test
 ```
 
 ---
