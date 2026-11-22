@@ -275,8 +275,19 @@ Para construir y ejecutar la API en Docker, usa estos comandos desde la raíz co
 
 ```bash
 docker build -t sigse-api ./backend
-docker run --rm --network sigse-uaa_default --env-file .env -e DB_HOST=db -e DB_PORT=3306 -e PORT=3000 -p 127.0.0.1:3000:3000 sigse-api
+docker run --rm --network sigse-uaa_default --env-file .env -e DB_HOST=db -e DB_PORT=3306 -e PORT=3000 -p 127.0.0.1:3000:3000 -v sigse-api-uploads:/app/uploads sigse-api
 ```
+
+### 4.5 Probar las inspecciones y sus evidencias
+
+Inicia sesión con `POST /api/auth/login` y usa el token de la respuesta en el encabezado
+`Authorization: Bearer <jwt>`. Las rutas de inspecciones permiten registrar, consultar,
+editar, asignar, iniciar, finalizar y cancelar según el rol. El contrato incluye ejemplos de
+peticiones y respuestas en [Inspecciones](docs/API.md#7-inspecciones).
+
+Para subir una evidencia, envía `multipart/form-data` con un archivo en `file` (máximo 8 MB).
+El archivo se guarda en `backend/uploads` por defecto y su descarga requiere el mismo token.
+En Docker el comando anterior conserva los archivos con el volumen `sigse-api-uploads`.
 
 ---
 

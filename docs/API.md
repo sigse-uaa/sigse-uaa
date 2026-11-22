@@ -5,8 +5,8 @@
   (`multipart/form-data`).
 - **Autenticación:** `Authorization: Bearer <jwt>` en todas las rutas marcadas.
 - **Fechas:** ISO 8601 en UTC (`2026-11-18T18:30:00.000Z`).
-- **Evidencias:** `file_path` es relativo (`/uploads/archivo.jpg`); el cliente lo resuelve
-  contra el origen del backend (`http://localhost:3000`).
+- **Evidencias:** `filePath` es relativo (`/uploads/archivo.jpg`). El cliente lo resuelve
+  contra el origen del backend (`http://localhost:3000`) y envía el mismo token Bearer al descargar.
 
 ---
 
@@ -16,11 +16,6 @@
 - **API (JSON, query params y valores de `sort`):** `camelCase` (`createdAt`, `categoryId`).
 - La traducción fila → JSON se hace **solo** en `backend/src/serializers.js`; ningún otro
   archivo arma respuestas con nombres de columna.
-- **Pendiente para A1 (#8):** al implementar inspecciones hay que unificar con esta convención
-  el parámetro `sort` (hoy documentado como `created_at`) y `file_path` de la introducción
-  (las respuestas ya usan `filePath`). Lo mismo con el momento en que se genera el `folio`
-  (hoy `MODELO_DATOS.md` dice "NULL hasta asignar"; el ejemplo de `POST /inspections` ya lo
-  devuelve al crear). Se decide en ese PR, no en el de autenticación.
 - Los **valores de dominio** (estados como `en_proceso`, acciones como `cambio_estado`,
   roles, prioridades) no cambian: son datos, no nombres de campo.
 
@@ -250,10 +245,10 @@ Lista paginada. El usuario general solo ve las suyas; el operador ve todas.
 | `priority` | enum | — | `baja`, `media`, `alta` |
 | `assignedToMe` | bool | false | Solo asignadas al operador actual |
 | `mine` | bool | false | Solo creadas por el usuario actual |
-| `from` / `to` | ISO date | — | Rango de creación |
+| `from` / `to` | fecha ISO `YYYY-MM-DD` | — | Rango de creación en UTC, con ambos días incluidos |
 | `page` | int | 1 | Página |
 | `limit` | int | 20 | Máx. 50 |
-| `sort` | enum | `created_at` | `created_at`, `updated_at`, `priority` |
+| `sort` | enum | `createdAt` | `createdAt`, `updatedAt`, `priority`. También se aceptan `created_at` y `updated_at`. |
 | `order` | enum | `desc` | `asc`, `desc` |
 
 **200**
@@ -284,7 +279,9 @@ Lista paginada. El usuario general solo ve las suyas; el operador ve todas.
 
 ### 7.2 `POST /inspections` — autenticado
 
-El creador queda como `created_by`; estado inicial `pendiente`.
+Los campos obligatorios son `title`, `description` y `categoryId`. La categoría debe estar
+activa. El servidor toma el creador del JWT y fija el estado inicial en `pendiente`.
+Si se omite la prioridad, usa `media`.
 
 ```json
 {
@@ -301,7 +298,9 @@ El creador queda como `created_by`; estado inicial `pendiente`.
 }
 ```
 
-**201** con la inspección creada (incluye `folio`). Registra historial `creacion`.
+**201** con `{ "data": { ... } }`, el encabezado `Location` y un folio `SIG-AAAA-ID` con
+el ID rellenado a al menos cinco dígitos. Guarda el registro y el evento `creacion` en la
+misma transacción. Devuelve **422** si la categoría no existe o está inactiva.
 
 ### 7.3 `GET /inspections/:id` — dueño u operador
 
@@ -372,8 +371,10 @@ Campos editables: `title`, `description`, `categoryId`, `priority`, `building`, 
 { "title": "Señal obstruida por mueble", "priority": "media" }
 ```
 
-**200** con la inspección actualizada. **403** si ya no está permitido editar. **422** si el
-estado no lo permite. Registra historial `actualizacion`.
+**200** con la inspección actualizada en `data`. Un usuario general solo puede editar sus
+inspecciones pendientes. Operadores pueden editar cualquier inspección en curso. Devuelve
+**403** si no hay permiso y **422** si un operador intenta editar una inspección finalizada
+o cancelada. Registra historial `actualizacion`.
 
 ### 7.5 `PATCH /inspections/:id/status` — operador / dueño (cancelar)
 
@@ -422,8 +423,10 @@ Body según transición:
 **Regla:** para `finalizada`, `reviewResult` debe tener al menos 10 caracteres y
 `finalCondition` debe ser `buena`, `regular`, `mala` o `reemplazada`. Si falta algo → **422**.
 
-**200** con la inspección actualizada. **403** rol no permitido. **422** transición inválida o
-regla incumplida. Registra historial.
+**200** con la inspección actualizada en `data`. **403** rol no permitido. **422** transición
+inválida o regla incumplida. Al asignar, el destino debe ser un operador activo. Cada cambio
+se guarda junto con su historial en una transacción. La cancelación conserva la inspección y
+sus datos.
 
 ### 7.6 `POST /inspections/:id/evidences` — dueño u operador
 
@@ -451,11 +454,15 @@ regla incumplida. Registra historial.
 }
 ```
 
-**413** archivo demasiado grande · **415** tipo no permitido · **422** inspección cancelada.
+El servidor reconoce el formato por el contenido del archivo. Registra la subida en el historial.
+**413** archivo demasiado grande · **415** tipo no permitido · **422** inspección cancelada
+o archivo ausente.
 
 ### 7.7 `DELETE /inspections/:id/evidences/:evidenceId` — autor u operador
 
-Elimina la fila y el archivo físico. **204**. **403** si no es autor ni operador.
+Elimina la fila, registra el evento en el historial e intenta borrar el archivo en disco.
+**204**. **403** si no es autor ni operador. Una vez confirmado el borrado en MySQL, el
+archivo ya no se puede descargar.
 
 ### 7.8 `GET /inspections/:id/history` — dueño u operador
 
@@ -477,7 +484,9 @@ Elimina la fila y el archivo físico. **204**. **403** si no es autor ni operado
 
 ### 7.9 `GET /inspections/stats/summary` — autenticado
 
-Conteos para el dashboard. El usuario ve solo sus datos; el operador ve todo.
+Conteos para el dashboard. El usuario ve solo sus datos y el operador ve todo.
+`last7Days` cuenta las creadas en los siete días anteriores. `pendingAssignedToMe` cuenta
+las inspecciones del operador autenticado con estado `asignada` o `en_proceso`.
 
 ```json
 {
@@ -501,10 +510,12 @@ Conteos para el dashboard. El usuario ve solo sus datos; el operador ve todo.
 
 ---
 
-## 8. Archivos estáticos
+## 8. Descarga de evidencias
 
-`GET /uploads/<archivo>` sirve las evidencias. En producción se debe restringir el acceso si
-los datos son sensibles; para la demo académica es aceptable con nombres aleatorios.
+`GET /uploads/<archivo>` exige `Authorization: Bearer <jwt>`. El dueño de la inspección o un
+operador puede descargar el archivo. Responde **403** si la inspección es ajena y **404** si
+la evidencia o su archivo no existe. Los PDF se envían como descarga y los ejemplos del seed
+no traen archivos en disco.
 
 ---
 

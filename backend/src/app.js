@@ -2,11 +2,15 @@ const cors = require('cors');
 const express = require('express');
 const helmet = require('helmet');
 const { createAuthController } = require('./controllers/auth.controller');
+const { createInspectionsController } = require('./controllers/inspections.controller');
 const { ApiError, handleError } = require('./errors');
 const { createAuthMiddleware } = require('./middleware/auth');
+const { validateParams } = require('./middleware/validate');
 const { createAuthRouter } = require('./routes/auth.routes');
+const { createInspectionsRouter } = require('./routes/inspections.routes');
+const { downloadParams } = require('./validators/inspections.validators');
 
-function createApp({ checkDatabase, corsOptions, authService }) {
+function createApp({ checkDatabase, corsOptions, authService, inspectionsService }) {
   const app = express();
   const api = express.Router();
 
@@ -44,6 +48,11 @@ function createApp({ checkDatabase, corsOptions, authService }) {
   // (usuarios, categorías, inspecciones...).
   const auth = createAuthMiddleware(authService);
   api.use('/auth', createAuthRouter(createAuthController(authService)));
+  if (inspectionsService) {
+    const controller = createInspectionsController(inspectionsService);
+    api.use('/inspections', createInspectionsRouter(controller, auth.authenticate));
+    app.get('/uploads/:filename', auth.authenticate, validateParams(downloadParams), controller.download);
+  }
 
   app.use('/api', api);
   app.use((_request, _response, next) => {
