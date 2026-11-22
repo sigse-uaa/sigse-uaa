@@ -7,6 +7,26 @@ class ApiError extends Error {
   }
 }
 
+/**
+ * Los errores de mysql2 traen `sql` con los valores ya interpolados (correos,
+ * hashes de contraseña) y `sqlMessage` puede repetirlos ("Duplicate entry '...'").
+ * Para esos casos solo se registran los códigos.
+ */
+function logUnexpectedError(error) {
+  const mysqlError = [error, error?.cause].find(
+    (candidate) => candidate && (typeof candidate.sql === 'string' || candidate.sqlMessage),
+  );
+  if (mysqlError) {
+    console.error('Error de MySQL:', {
+      code: mysqlError.code,
+      errno: mysqlError.errno,
+      sqlState: mysqlError.sqlState,
+    });
+    return;
+  }
+  console.error(error);
+}
+
 function handleError(error, _request, response, next) {
   if (response.headersSent) {
     return next(error);
@@ -33,7 +53,7 @@ function handleError(error, _request, response, next) {
     });
   }
 
-  console.error(error);
+  logUnexpectedError(error);
   return response.status(500).json({
     error: { code: 'INTERNAL_ERROR', message: 'Ocurrió un error interno.', details: [] },
   });
