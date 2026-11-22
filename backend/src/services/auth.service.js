@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 const { ApiError } = require('../errors');
 const { serializeUser } = require('../serializers');
 
-const BCRYPT_ROUNDS = 10;
+// Mismo coste que los hashes de database/seed.sql: con otro, el tiempo de login
+// delataría si el correo existe.
+const BCRYPT_ROUNDS = 12;
 
 // Hash válido de una contraseña cualquiera: se compara aunque el correo no
 // exista, para que el tiempo de respuesta no revele qué correos están registrados.
