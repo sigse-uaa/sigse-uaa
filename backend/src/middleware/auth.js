@@ -11,12 +11,17 @@ const { ApiError } = require('../errors');
  */
 function createAuthMiddleware(authService) {
   async function authenticate(request, _response, next) {
-    const header = request.get('Authorization') ?? '';
-    const [scheme, token] = header.split(' ');
-
-    if (scheme?.toLowerCase() !== 'bearer' || !token) {
+    const header = request.get('Authorization');
+    if (!header) {
       return next(new ApiError(401, 'MISSING_TOKEN', 'Inicia sesión para continuar.'));
     }
+
+    // Exactamente "Bearer <token>": cualquier texto sobrante invalida la cabecera.
+    const match = /^Bearer\s+(\S+)$/i.exec(header);
+    if (!match) {
+      return next(new ApiError(401, 'INVALID_TOKEN', 'Tu sesión expiró o no es válida.'));
+    }
+    const token = match[1];
 
     try {
       request.user = await authService.authenticateToken(token);

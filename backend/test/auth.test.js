@@ -170,3 +170,40 @@ test('login: la respuesta no incluye el hash ni la contraseña', async (t) => {
   assert.equal(text.includes('password'), false);
   assert.equal(text.includes('$2'), false);
 });
+
+test('registro y login: la contraseña se limita a 72 bytes, no a 72 caracteres', async (t) => {
+  const { api } = await startApi(t);
+  // 40 "ñ" = 40 caracteres pero 80 bytes: bcrypt truncaría sin avisar.
+  const password = `${'ñ'.repeat(40)}a1`;
+
+  const register = await postJson(`${api}/auth/register`, {
+    name: 'Ana López',
+    email: 'ana@uaa.mx',
+    password,
+  });
+  const body = await register.json();
+  assert.equal(register.status, 422);
+  assert.match(body.error.details[0].message, /72 bytes/);
+
+  const login = await postJson(`${api}/auth/login`, { email: 'usuario@example.com', password });
+  assert.equal(login.status, 422);
+
+  // 72 bytes exactos sí se aceptan.
+  const exact = await postJson(`${api}/auth/register`, {
+    name: 'Ana López',
+    email: 'ana@uaa.mx',
+    password: `${'a'.repeat(71)}1`,
+  });
+  assert.equal(exact.status, 201);
+});
+
+test('login: contraseña incorrecta en una cuenta desactivada responde 401, no 403', async (t) => {
+  const { api } = await startApi(t);
+  const response = await postJson(`${api}/auth/login`, {
+    email: 'baja@example.com',
+    password: 'incorrecta1',
+  });
+
+  assert.equal(response.status, 401);
+  assert.equal((await response.json()).error.code, 'INVALID_CREDENTIALS');
+});

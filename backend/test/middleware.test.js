@@ -48,6 +48,17 @@ test('authenticate: rechaza esquemas distintos de Bearer', async (t) => {
   assert.equal(response.status, 401);
 });
 
+test('authenticate: rechaza texto sobrante después del token en la cabecera', async (t) => {
+  const { url } = await startProtectedApi(t);
+  const token = sign(3, 'usuario');
+
+  for (const header of [`Bearer ${token} extra`, `Bearer ${token} Bearer otro`, 'Bearer']) {
+    const response = await fetch(`${url}/privada`, { headers: { Authorization: header } });
+    assert.equal(response.status, 401, `debía rechazar "${header.slice(0, 30)}"`);
+  }
+  assert.equal((await fetch(`${url}/privada`, bearer(token))).status, 200);
+});
+
 test('authenticate: un token válido deja el usuario en request.user', async (t) => {
   const { url } = await startProtectedApi(t);
   const response = await fetch(`${url}/privada`, bearer(sign(3, 'usuario')));
