@@ -158,12 +158,15 @@ Permisos Android en `AndroidManifest.xml`: `INTERNET`, `CAMERA`,
 ```text
 server.js  → arranque HTTP
 app.js     → middlewares globales + montaje de rutas (exportado para tests)
-routes     → define endpoints y aplica auth/roles/validación
-controllers→ traduce HTTP ↔ servicios, arma respuestas
-services   → reglas de negocio y SQL
-middleware → authenticate, authorize, validate, upload, errorHandler
-config     → env, pool MySQL
-validators → esquemas Zod
+routes       → define endpoints y aplica auth/roles/validación
+controllers  → traduce HTTP ↔ servicios, arma respuestas
+services     → reglas de negocio (sin SQL)
+repositories → acceso a MySQL, consultas parametrizadas (permite probar servicios sin base)
+middleware   → authenticate, authorize, validate, upload, errorHandler
+config.js    → lectura y validación de variables de entorno (p. ej. JWT_SECRET)
+serializers.js → única traducción fila (snake_case) → JSON (camelCase)
+validators   → esquemas Zod
+testing/     → ayudantes de pruebas (repositorios en memoria); no se publica en Docker
 utils      → ApiError, asyncHandler, paginación, folios
 ```
 
@@ -171,7 +174,11 @@ utils      → ApiError, asyncHandler, paginación, folios
 
 - Registro público: siempre crea `usuario` (nunca permite elegir rol).
 - Login: verifica bcrypt y firma JWT `{ sub, role }` con expiración de 8 h.
-- Middleware `authenticate`: valida firma, consulta usuario activo y adjunta `req.user`.
+- Middleware `authenticate`: valida firma (solo HS256), consulta al usuario en la base y adjunta `req.user` `{ id, name, email, role }`. **El rol sale de la base, no del token**, y un usuario dado de baja pierde el acceso al instante.
+- El servidor **no arranca** si `JWT_SECRET` falta o mide menos de 32 caracteres, si es el valor de ejemplo de `.env.example` (solo se permite con `NODE_ENV=development` o `test`) o si `JWT_EXPIRES_IN` no es válido.
+- La contraseña se limita a **72 bytes** (límite real de bcrypt), no a 72 caracteres.
+- Los errores inesperados de MySQL se registran solo con `code`, `errno` y `sqlState`: el mensaje y la consulta pueden traer correos y hashes.
+- Login: correo inexistente y contraseña incorrecta dan la misma respuesta `401` (y se compara un hash falso con el mismo coste que el seed, 12, para igualar tiempos).
 - Middleware `authorize('operador')`: rechaza con `403`.
 - Reglas de propiedad se validan en el servicio (dueño vs operador).
 
@@ -352,7 +359,13 @@ tendrá un endpoint, pero se protege con firewall, usuario limitado, contraseña
 4. Clonar el repositorio y crear `.env` a partir de `.env.example`.
 5. Generar el build web y el APK apuntando a `https://TU_DOMINIO/api`.
 6. Levantar los servicios con `docker compose up -d --build`.
-7. Cargar `schema.sql` y `seed.sql` una sola vez.
+7. Cargar **solo** `schema.sql`. **No cargar `seed.sql` en producción**: crea operadores con la
+   contraseña de demo `SigseDemo2026!`, que es pública en el repositorio. Después:
+   - Crear el primer operador con una contraseña propia. Genera el hash con
+     `node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 12))" 'TuContraseñaLarga1'`
+     e insértalo con
+     `INSERT INTO users (name, email, password_hash, role) VALUES ('Nombre', 'correo', '<hash>', 'operador');`
+   - Crear las categorías desde la app o con `POST /api/categories` como ese operador.
 8. Verificar `/api/health`, `/api/health/db`, login, subida de foto y acceso desde dos
    dispositivos.
 9. Programar respaldo de MySQL y del volumen de uploads.
@@ -525,7 +538,7 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 
 ### 6.5 Checklist de despliegue
 
-- [ ] DB creada con schema + seed.
+- [ ] DB creada solo con `schema.sql` (sin `seed.sql`), con un operador de contraseña propia.
 - [ ] MySQL no expone el puerto `3306` a internet.
 - [ ] HTTPS activo y redirección desde HTTP.
 - [ ] API responde `/api/health` y `/api/health/db`.
@@ -533,7 +546,8 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 - [ ] Login funciona desde web y Android.
 - [ ] Uploads persisten tras reinicio.
 - [ ] Respaldo de MySQL y de uploads programado.
-- [ ] Variables de entorno configuradas (sin secretos en el repo).
+- [ ] Variables de entorno configuradas (sin secretos en el repo), con `NODE_ENV=production` y un `JWT_SECRET` propio.
+- [ ] Cuentas de demo del seed inexistentes (`operador1@example.com`, `usuario@example.com`...).
 - [ ] Web publicada y accesible.
 - [ ] APK instalado en dispositivo físico.
 - [ ] Prueba 9.1 entre dos dispositivos.
@@ -559,4 +573,4 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 | Servicio de hosting definitivo | Recomendado: VPS único; confirmar proveedor en Sprint 3 | Edson |
 | Volumen persistente vs Cloudinary | Recomendado: volumen Docker en el VPS | Edson + Alonso |
 | Firma del APK | Por definir | Edson |
-| Rate limiting | Opcional si hay tiempo | Diana |
+| Rate limiting del login | Pendiente: E6 no lo incluye; **obligatorio antes de publicar** (p. ej. `express-rate-limit` en `/auth/login`). Issue: por crear | Diana |

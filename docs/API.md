@@ -10,6 +10,22 @@
 
 ---
 
+## 0. Convenciones de nombres
+
+- **Base de datos:** columnas en `snake_case` (`created_at`, `category_id`).
+- **API (JSON, query params y valores de `sort`):** `camelCase` (`createdAt`, `categoryId`).
+- La traducción fila → JSON se hace **solo** en `backend/src/serializers.js`; ningún otro
+  archivo arma respuestas con nombres de columna.
+- **Pendiente para A1 (#8):** al implementar inspecciones hay que unificar con esta convención
+  el parámetro `sort` (hoy documentado como `created_at`) y `file_path` de la introducción
+  (las respuestas ya usan `filePath`). Lo mismo con el momento en que se genera el `folio`
+  (hoy `MODELO_DATOS.md` dice "NULL hasta asignar"; el ejemplo de `POST /inspections` ya lo
+  devuelve al crear). Se decide en ese PR, no en el de autenticación.
+- Los **valores de dominio** (estados como `en_proceso`, acciones como `cambio_estado`,
+  roles, prioridades) no cambian: son datos, no nombres de campo.
+
+---
+
 ## 1. Formato de error
 
 ```json
@@ -104,7 +120,7 @@ Reglas: nombre 3–120, correo válido, contraseña ≥ 8 con al menos una letra
 ### `POST /auth/login` — público
 
 ```json
-{ "email": "usuario@uaa.mx", "password": "Usuario123!" }
+{ "email": "usuario@example.com", "password": "SigseDemo2026!" }
 ```
 
 **200**
@@ -112,18 +128,33 @@ Reglas: nombre 3–120, correo válido, contraseña ≥ 8 con al menos una letra
 ```json
 {
   "token": "eyJ...",
-  "user": { "id": 2, "name": "Usuario Demo", "email": "usuario@uaa.mx", "role": "usuario" }
+  "user": { "id": 3, "name": "Usuario Demo", "email": "usuario@example.com", "role": "usuario" }
 }
 ```
 
 **401** credenciales inválidas · **403** usuario inactivo.
+
+**Códigos de error de autenticación** (campo `error.code`):
+
+| HTTP | `code` | Cuándo |
+| --- | --- | --- |
+| `422` | `VALIDATION_ERROR` | Datos inválidos; `details` trae `{ path, message }` por campo |
+| `409` | `EMAIL_TAKEN` | El correo ya está registrado (`/auth/register`) |
+| `401` | `INVALID_CREDENTIALS` | Correo o contraseña incorrectos (misma respuesta para correo inexistente) |
+| `403` | `USER_INACTIVE` | Cuenta desactivada (`/auth/login` o token de un usuario dado de baja) |
+| `401` | `MISSING_TOKEN` | Falta la cabecera `Authorization: Bearer <jwt>` |
+| `401` | `INVALID_TOKEN` | Token malformado, expirado, firmado con otro secreto, o usuario inexistente |
+| `403` | `FORBIDDEN` | El rol no puede realizar la operación |
+
+El correo se normaliza (sin espacios y en minúsculas) tanto en el registro como en el login.
+La contraseña admite hasta 72 caracteres, el límite de bcrypt.
 
 ### `GET /auth/me` — autenticado
 
 **200**
 
 ```json
-{ "user": { "id": 2, "name": "Usuario Demo", "email": "usuario@uaa.mx", "role": "usuario", "isActive": true } }
+{ "user": { "id": 3, "name": "Usuario Demo", "email": "usuario@example.com", "role": "usuario", "isActive": true } }
 ```
 
 ---
@@ -137,7 +168,7 @@ Lista usuarios activos. Filtros: `?role=operador`, `?q=texto`.
 ```json
 {
   "data": [
-    { "id": 1, "name": "Operador Demo", "email": "operador@uaa.mx", "role": "operador", "isActive": true }
+    { "id": 1, "name": "Operador Demo 1", "email": "operador1@example.com", "role": "operador", "isActive": true }
   ]
 }
 ```
@@ -160,7 +191,7 @@ Todos los campos son opcionales. Si se cambia la contraseña, se exige `currentP
 Crea un operador.
 
 ```json
-{ "name": "Nuevo Operador", "email": "operador2@uaa.mx", "password": "Operador123!" }
+{ "name": "Nuevo Operador", "email": "operador3@example.com", "password": "Operador123!" }
 ```
 
 **201** con el usuario creado.
@@ -485,7 +516,7 @@ BASE=http://localhost:3000/api
 # Login
 TOKEN=$(curl -s -X POST "$BASE/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"operador@uaa.mx","password":"Operador123!"}' | jq -r .token)
+  -d '{"email":"operador1@example.com","password":"SigseDemo2026!"}' | jq -r .token)
 
 # Listar inspecciones
 curl -s "$BASE/inspections?status=pendiente&page=1&limit=10" \

@@ -256,6 +256,19 @@ de `SQL_PORT`. Para conexiones con otra configuración, `DB_HOST`, `DB_PORT`, `D
 `DB_USER` y `DB_PASSWORD` tienen prioridad. Las pruebas de `npm test` en `backend/` simulan
 las respuestas de MySQL y se ejecutan también en GitHub Actions.
 
+Para iniciar sesión, la API firma tokens JWT con `JWT_SECRET` (mínimo 32 caracteres) y
+`JWT_EXPIRES_IN` (por defecto `8h`). **Si falta `JWT_SECRET`, o si `JWT_EXPIRES_IN` no es
+válido, el servidor no arranca.** Si ya tienes un `.env`, copia desde `.env.example` las líneas
+`NODE_ENV=development`, `JWT_SECRET` y `JWT_EXPIRES_IN`. El secreto de ejemplo solo funciona con
+`NODE_ENV=development` o `test`; en cualquier servidor genera uno propio.
+Con el seed cargado puedes probar el login con las cuentas de la sección
+[Cuentas de prueba de SIGSE](#cuentas-de-prueba-de-sigse):
+
+```bash
+curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"operador1@example.com","password":"SigseDemo2026!"}'
+```
+
 Para construir y ejecutar la API en Docker, usa estos comandos desde la raíz con el servicio
 `db` ya iniciado. `sigse-uaa_default` es la red que crea Compose cuando el proyecto se llama
 `sigse-uaa`. Si usas otro nombre de proyecto, cambia el nombre de red.
