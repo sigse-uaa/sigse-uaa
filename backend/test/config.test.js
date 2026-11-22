@@ -20,9 +20,21 @@ test('loadAuthConfig usa 8 horas de vigencia por defecto', () => {
   );
 });
 
-test('loadAuthConfig rechaza en producción el secreto de ejemplo de .env.example', () => {
-  const example = 'cambia-este-secreto-de-desarrollo-por-uno-largo-y-aleatorio';
+const EXAMPLE = 'cambia-este-secreto-de-desarrollo-por-uno-largo-y-aleatorio';
 
-  assert.throws(() => loadAuthConfig({ JWT_SECRET: example, NODE_ENV: 'production' }), /ejemplo/);
-  assert.equal(loadAuthConfig({ JWT_SECRET: example }).jwtSecret, example);
+test('loadAuthConfig solo acepta el secreto de ejemplo en development o test', () => {
+  assert.equal(loadAuthConfig({ JWT_SECRET: EXAMPLE, NODE_ENV: 'development' }).jwtSecret, EXAMPLE);
+  assert.equal(loadAuthConfig({ JWT_SECRET: EXAMPLE, NODE_ENV: 'test' }).jwtSecret, EXAMPLE);
+
+  for (const NODE_ENV of ['production', 'staging', undefined]) {
+    assert.throws(() => loadAuthConfig({ JWT_SECRET: EXAMPLE, NODE_ENV }), /ejemplo/, `NODE_ENV=${NODE_ENV}`);
+  }
+});
+
+test('loadAuthConfig detecta al arrancar una vigencia JWT inválida', () => {
+  const base = { JWT_SECRET: 'x'.repeat(32) };
+
+  assert.throws(() => loadAuthConfig({ ...base, JWT_EXPIRES_IN: 'ocho horas' }), /JWT_EXPIRES_IN/);
+  assert.throws(() => loadAuthConfig({ ...base, JWT_EXPIRES_IN: '8 hrs mas' }), /JWT_EXPIRES_IN/);
+  assert.equal(loadAuthConfig({ ...base, JWT_EXPIRES_IN: '30m' }).jwtExpiresIn, '30m');
 });

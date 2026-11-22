@@ -257,8 +257,10 @@ de `SQL_PORT`. Para conexiones con otra configuración, `DB_HOST`, `DB_PORT`, `D
 las respuestas de MySQL y se ejecutan también en GitHub Actions.
 
 Para iniciar sesión, la API firma tokens JWT con `JWT_SECRET` (mínimo 32 caracteres) y
-`JWT_EXPIRES_IN` (por defecto `8h`). **Si falta `JWT_SECRET`, el servidor no arranca.** Si ya
-tienes un `.env`, copia esas dos líneas desde `.env.example` y cambia el secreto por uno propio.
+`JWT_EXPIRES_IN` (por defecto `8h`). **Si falta `JWT_SECRET`, o si `JWT_EXPIRES_IN` no es
+válido, el servidor no arranca.** Si ya tienes un `.env`, copia desde `.env.example` las líneas
+`NODE_ENV=development`, `JWT_SECRET` y `JWT_EXPIRES_IN`. El secreto de ejemplo solo funciona con
+`NODE_ENV=development` o `test`; en cualquier servidor genera uno propio.
 Con el seed cargado puedes probar el login con las cuentas de la sección
 [Cuentas de prueba de SIGSE](#cuentas-de-prueba-de-sigse):
 
