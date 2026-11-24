@@ -64,21 +64,21 @@ class ApiException implements Exception {
   factory ApiException.network([String? message]) {
     return ApiException(
       message: message ?? 'No se pudo conectar con el servidor.',
-      code: 'network_error',
+      code: 'NETWORK_ERROR',
     );
   }
 
   factory ApiException.timeout() {
     return const ApiException(
       message: 'El servidor tardó demasiado en responder.',
-      code: 'timeout',
+      code: 'TIMEOUT',
     );
   }
 
   factory ApiException.invalidResponse() {
     return const ApiException(
       message: 'El servidor devolvió una respuesta inválida.',
-      code: 'invalid_response',
+      code: 'INVALID_RESPONSE',
     );
   }
 
