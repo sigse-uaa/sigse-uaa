@@ -11,12 +11,13 @@ services:
       # Solo accesible desde este equipo.
       - "127.0.0.1:${DB_PORT}:3306"
     volumes:
-      # Volumen con los datos de MySQL.
-      - mysql_data:/var/lib/mysql
+      # Volumen con los datos de MySQL. No cambiar el nombre: Docker crearía uno vacío
+      # y los datos guardados dejarían de verse.
+      - mysql_dataDB:/var/lib/mysql
       # Formato origen:destino. MySQL ejecuta estos archivos en orden solo cuando el volumen está vacío.
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  mysql_dataDB:
