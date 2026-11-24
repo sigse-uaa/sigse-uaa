@@ -135,8 +135,14 @@ git branch -D feature/mi-tarea
 ```
 
 Se usa `-D` (mayúscula) porque con *squash* el commit de `main` es nuevo y Git no reconoce la
-rama como integrada: `-d` se negaría a borrarla. Antes, confirma en GitHub que el PR está
-integrado.
+rama como integrada: `-d` se negaría a borrarla. Como `-D` borra sin preguntar, antes haz dos
+comprobaciones:
+
+1. En GitHub, el PR de esa rama dice **Merged** (no *Closed*).
+2. El último commit del PR es el mismo que el de tu rama local:
+   `git log -1 --format=%h feature/mi-tarea` debe coincidir con el último commit que muestra
+   la pestaña **Commits** del PR. Si tu rama tiene commits más nuevos, no se subieron y se
+   perderían.
 
 ### 3.6 Mantener la rama al día
 
@@ -441,7 +447,9 @@ git fetch origin && git rebase origin/main
 
 # Limpiar ramas ya integradas (con squash, `--merged` no las detecta)
 git fetch --prune            # quita las referencias a ramas remotas borradas
-git branch -vv               # las marcadas [desaparecido] ya se integraron
+git branch -vv               # [desaparecido] = la rama remota ya no existe, NO que se integró
+# Antes de borrar: el PR dice Merged y `git log -1 --format=%h <rama>` coincide con su
+# último commit (ver §3.5). Solo entonces:
 git branch -D <rama>
 ```
 
