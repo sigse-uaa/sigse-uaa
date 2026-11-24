@@ -118,8 +118,8 @@ erDiagram
 | `is_active` | BOOLEAN | NOT NULL, default 1 | Disponible para nuevas inspecciones |
 | `created_at`, `updated_at` | TIMESTAMP | | Auditoría |
 
-Categorías iniciales: evacuación, rutas de circulación, equipo contra incendio, seguridad,
-informativa.
+Categorías iniciales (seed): `Evacuación`, `Rutas de circulación`, `Equipo contra incendio`,
+`Seguridad` e `Informativa`.
 
 ### 2.3 `inspections` (registro principal)
 
@@ -245,13 +245,19 @@ Los permisos se comprueban en el backend; ocultar botones en Flutter es solo UX.
 ## 5. Índices y rendimiento
 
 ```sql
+-- Nombres reales de database/schema.sql. Los fk_* son los índices que respaldan cada llave foránea.
+UNIQUE uq_users_email (email)
+UNIQUE uq_categories_name (name)
+UNIQUE uq_inspections_folio (folio)
 INDEX idx_inspections_status (status)
-INDEX idx_inspections_category (category_id)
-INDEX idx_inspections_created_by (created_by)
-INDEX idx_inspections_assigned_to (assigned_to)
 INDEX idx_inspections_created_at (created_at)
+INDEX fk_inspections_category (category_id)
+INDEX fk_inspections_created_by (created_by)
+INDEX fk_inspections_assigned_to (assigned_to)
 INDEX idx_history_inspection (inspection_id, created_at)
-INDEX idx_evidences_inspection (inspection_id)
+INDEX fk_history_users (changed_by)
+INDEX fk_evidences_inspection (inspection_id)
+INDEX fk_evidences_users (uploaded_by)
 ```
 
 - Listados paginados (`LIMIT/OFFSET`) con `ORDER BY created_at DESC`.
@@ -263,8 +269,9 @@ INDEX idx_evidences_inspection (inspection_id)
 ## 6. Datos de ejemplo (seed)
 
 - 5 categorías temáticas.
-- 3 usuarios: 1 operador, 1 usuario general, 1 operador adicional.
-- 6–8 inspecciones en distintos estados, con ubicaciones dentro de la UAA.
+- 3 usuarios: `operador1` (id 1), `operador2` (id 2) y `usuario` (id 3, usuario general).
+- 6 inspecciones en todos los estados, con edificio, área y coordenadas aproximadas dentro de
+  Ciudad Universitaria (ficticias, para que el mapa tenga qué mostrar).
 - Evidencias de ejemplo con rutas placeholder (los archivos reales se suben en la demo).
 - Historial coherente con cada estado.
 
@@ -280,7 +287,8 @@ Credenciales demo en `README.md`. **Cambiarlas antes de publicar.**
   internas, si se define).
 - No se puede borrar una categoría con inspecciones: se desactiva (`is_active = 0`).
 - No se puede borrar un usuario con inspecciones: se desactiva.
-- Las evidencias solo se agregan a inspecciones activas.
+- Las evidencias se pueden agregar en cualquier estado salvo `cancelada` (también en `finalizada`,
+  para adjuntar la foto del resultado). El backend responde `422 INSPECTION_CANCELLED`.
 - `final_condition` es un catálogo cerrado; el backend rechaza otros valores.
 - `tilt_degrees` se guarda entre −90 y 90; valor informativo, no bloquea la creación.
 

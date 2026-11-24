@@ -126,13 +126,17 @@ git push -u origin feature/mi-tarea
 - El revisor comenta, aprueba o solicita cambios.
 - El autor responde y sube correcciones **en la misma rama** (se actualiza el PR).
 - Con **1 aprobación** y CI verde, el autor integra con **Squash and merge**.
-- Borrar la rama remota y local:
+- La rama remota se borra sola al integrar. Para borrar la local:
 
 ```bash
 git switch main
 git pull --ff-only
-git branch -d feature/mi-tarea
+git branch -D feature/mi-tarea
 ```
+
+Se usa `-D` (mayúscula) porque con *squash* el commit de `main` es nuevo y Git no reconoce la
+rama como integrada: `-d` se negaría a borrarla. Antes, confirma en GitHub que el PR está
+integrado.
 
 ### 3.6 Mantener la rama al día
 
@@ -262,21 +266,21 @@ Todo trabajo relevante nace de un Issue. Incluye:
 - Contexto y objetivo.
 - Criterios de aceptación verificables.
 - Responsable (Assignee).
-- Etiquetas (`type:*`, `area:*`, `priority:*`).
+- Etiquetas de tipo y de área (ver §6.1) y prioridad en el campo **Priority** del tablero.
 - Milestone/sprint cuando aplique.
 - Enlace a rama/PR.
 
 Plantillas disponibles en `.github/ISSUE_TEMPLATE/`.
 
-### 6.1 Labels sugeridos
+### 6.1 Labels del repositorio
 
 | Grupo | Labels |
 | --- | --- |
-| Tipo | `type:feature`, `type:bug`, `type:docs`, `type:test`, `type:chore` |
-| Área | `area:flutter`, `area:backend`, `area:database`, `area:github`, `area:mobile` |
-| Prioridad | `priority:high`, `priority:medium`, `priority:low` |
-| Estado | `status:blocked`, `status:needs-review`, `status:help-wanted` |
-| Especial | `good-first-issue`, `security`, `regression` |
+| Tipo | `bug`, `enhancement`, `task`, `documentation` |
+| Área | `area:*` (por ejemplo `area:backend`, `area:mobile`) |
+
+La prioridad no es una etiqueta: se usa el campo **Priority** del tablero de Projects, y el
+tipo de Issue (**Task**, **Bug**, **Feature**) se elige al crearlo.
 
 ### 6.2 GitHub Projects
 
@@ -298,7 +302,8 @@ Cada Issue se agrega al proyecto y se mueve conforme avanza. Un Issue solo pasa 
 
 1. GitHub → **New organization** (plan gratuito).
 2. Nombre sugerido: `sigse-uaa` como organización, repositorio `sigse-uaa` (o `SIGSE`).
-3. Visibilidad **Private** durante el desarrollo; hacer público solo si el docente lo pide.
+3. Visibilidad **Public**: en el plan gratuito de organización, la protección de ramas en
+   repositorios privados no está garantizada.
 4. **No** inicializar con README si ya existe el local (para evitar historiales separados).
 5. Agregar al docente como **Admin**: Settings → Collaborators and teams → Add people → rol
    **Admin** (o invitarlo a la organización con rol Owner/Admin).
@@ -306,19 +311,16 @@ Cada Issue se agrega al proyecto y se mueve conforme avanza. Un Issue solo pasa 
 
 ### 7.2 Proteger `main`
 
-Settings → Branches → **Add branch protection rule**:
+`main` se protege con un **Ruleset** (Settings → Rules → Rulesets → New branch ruleset),
+que es el mecanismo actual de GitHub y reemplaza a las "branch protection rules" clásicas:
 
-- Branch name pattern: `main`
-- [x] Require a pull request before merging
-- [x] Require approvals: **1**
+- Target: la rama por defecto (`main`).
+- [x] Restrict deletions
+- [x] Require a pull request before merging, con **1** aprobación
 - [x] Dismiss stale pull request approvals when new commits are pushed
-- [x] Require review from Code Owners (opcional)
-- [x] Require status checks to pass before merging
-- [x] Require branches to be up to date before merging
 - [x] Require conversation resolution before merging
-- [x] Do not allow bypassing the above settings
-- [ ] Allow force pushes (desactivado)
-- [ ] Allow deletions (desactivado)
+- [x] Require status checks to pass: `Flutter analyze y tests` y `Pruebas del backend`
+- [x] Block force pushes
 
 ### 7.3 Configuración general
 
@@ -429,16 +431,18 @@ git fetch --all --prune
 git switch main && git pull --ff-only
 
 # Rama y commits
-git switch -c feat/mi-tarea
+git switch -c feature/mi-tarea
 git add -p
 git commit -m "feat(scope): descripción"
-git push -u origin feat/mi-tarea
+git push -u origin feature/mi-tarea
 
 # Actualizar con main
 git fetch origin && git rebase origin/main
 
-# Limpiar ramas locales ya integradas
-git branch --merged main | grep -v "main" | xargs -r git branch -d
+# Limpiar ramas ya integradas (con squash, `--merged` no las detecta)
+git fetch --prune            # quita las referencias a ramas remotas borradas
+git branch -vv               # las marcadas [desaparecido] ya se integraron
+git branch -D <rama>
 ```
 
 Convenciones: [Conventional Commits](https://www.conventionalcommits.org/) ·

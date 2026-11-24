@@ -50,18 +50,21 @@ Principios:
 
 ### 2.1 Capas
 
-| Capa | Responsabilidad | Ejemplos |
-| --- | --- | --- |
-| `core/` | Infraestructura transversal | `ApiClient`, `LocalStorage`, `AppConfig`, `AppRoutes`, tema, constantes |
-| `features/<x>/models` | Modelos inmutables con `fromJson`/`toJson` | `Inspection`, `Category` |
-| `features/<x>/data` | Repositorios: HTTP + caché | `InspectionsRepository`, `AuthRepository` |
-| `features/<x>/state` | `ChangeNotifier` expuestos con Provider | `AuthProvider`, `InspectionsProvider` |
-| `features/<x>/screens` | Pantallas | `LoginScreen`, `InspectionDetailScreen` |
-| `features/shell` | Navegación responsiva | `NavigationBar` / `NavigationRail` |
-| `core/widgets` | Componentes reutilizables | `StatusBadge`, `EmptyState`, `ErrorView` |
+Cada módulo vive en `lib/features/<módulo>/` con tres carpetas. Es la convención que ya usa el
+código (`features/home/presentation/home_page.dart`); seguirla en todos los módulos.
 
-Regla de dependencias: `screens → state → data → models/core`. Nunca al revés. Una pantalla no
-construye URLs ni maneja `http` directamente.
+| Carpeta | Responsabilidad | Nombres de archivo y clase |
+| --- | --- | --- |
+| `core/` | Infraestructura transversal | `ApiClient`, `LocalStorage`, `AppConfig`, `AppRoutes`, tema, `core/widgets` |
+| `features/<x>/data` | Modelos inmutables (`fromJson`/`toJson`) y repositorios (HTTP + caché) | `inspection.dart` → `Inspection`; `inspections_repository.dart` → `InspectionsRepository` |
+| `features/<x>/state` | `ChangeNotifier` expuestos con Provider | `inspections_provider.dart` → `InspectionsProvider` |
+| `features/<x>/presentation` | Pantallas y widgets propios del módulo | `inspection_detail_page.dart` → `InspectionDetailPage`; widgets sin sufijo (`StatusBadge`) |
+| `features/shell` | Navegación responsiva | `AppShell` con `NavigationBar` / `NavigationRail` |
+
+- Pantallas completas terminan en `Page`; las clases de acceso a datos, en `Repository`.
+- Un modelo que usan varios módulos sube a `core/models/` (como `User`).
+- Regla de dependencias: `presentation → state → data → core`. Nunca al revés. Una pantalla no
+  construye URLs ni maneja `http` directamente.
 
 ### 2.2 Gestión de estado
 
@@ -104,10 +107,14 @@ Formato de error del backend:
 ### 2.5 Persistencia local y offline
 
 - `LocalStorage` (envoltura de `shared_preferences`, **ya implementada** en `core/storage/`) y,
-  sobre ella, `SessionStore` (**pendiente, se crea en la tarea E3** junto con la auth UI):
+  sobre ella, `SessionStore` (**pendiente, se crea en la tarea E3** junto con la auth UI).
+  Las claves están en `StorageKeys` (`core/storage/storage_keys.dart`); no escribir claves a mano:
   - `auth_token`, `auth_user`, `theme_mode`.
-  - `cache_inspections_<userId>`: últimos resultados JSON.
-  - `last_sync_<userId>`: marca de tiempo.
+  - `inspections_cache_<userId>` (`StorageKeys.inspectionsCache(id)`): últimos resultados JSON.
+  - `last_sync_<userId>` (`StorageKeys.lastSync(id)`): marca de tiempo de la última sincronización.
+  - `categories_cache`: catálogo de categorías (igual para todos, sin id).
+  - La caché de inspecciones lleva el id del usuario para que otra cuenta en el mismo equipo
+    no vea datos ajenos. Al cerrar sesión se borran el token y el usuario.
 - Estrategia **cache-first para lectura**:
   1. Mostrar caché inmediatamente si existe.
   2. Intentar red; si responde, actualizar caché y UI.
@@ -144,8 +151,9 @@ Permisos Android en `AndroidManifest.xml`: `INTERNET`, `CAMERA`,
 ### 2.8 Diseño responsivo
 
 - Material 3, `ColorScheme.fromSeed`, modo claro/oscuro persistido.
-- Breakpoints: móvil `< 600`, tablet `600–1024`, escritorio `> 1024`.
-- Listados en `ListView` en móvil y `GridView`/dos paneles en escritorio.
+- Un solo breakpoint, el mismo del shell (§2.3): `< 720 px` es diseño móvil y `≥ 720 px` es
+  diseño amplio (tablet, web y escritorio).
+- Listados en `ListView` en móvil y `GridView`/dos paneles en diseño amplio.
 - Formularios con ancho máximo (~720 px) centrado en pantallas grandes.
 - Textos y botones con escalado accesible; contraste adecuado.
 
@@ -162,13 +170,19 @@ routes       → define endpoints y aplica auth/roles/validación
 controllers  → traduce HTTP ↔ servicios, arma respuestas
 services     → reglas de negocio (sin SQL)
 repositories → acceso a MySQL, consultas parametrizadas (permite probar servicios sin base)
-middleware   → authenticate, authorize, validate, upload, errorHandler
+middleware   → auth.js (authenticate, authorize), validate.js, evidence-upload.js (Multer)
+storage      → evidences.js: guarda, valida el formato y borra archivos de evidencia
 config.js    → lectura y validación de variables de entorno (p. ej. JWT_SECRET)
+cors.js      → opciones de CORS según CORS_ORIGIN y NODE_ENV
+database.js  → pool de mysql2 con las variables DB_*
+errors.js    → ApiError y handleError (formato de error único de la API)
 serializers.js → única traducción fila (snake_case) → JSON (camelCase)
 validators   → esquemas Zod
 testing/     → ayudantes de pruebas (repositorios en memoria); no se publica en Docker
-utils      → ApiError, asyncHandler, paginación, folios
 ```
+
+Express 5 propaga solo las promesas rechazadas de los controladores al manejador de errores,
+así que no hace falta un `asyncHandler`.
 
 ### 3.2 Autenticación y autorización
 
@@ -225,11 +239,11 @@ CHECK (status <> 'finalizada' OR (review_result IS NOT NULL AND final_condition 
 ### 3.6 Validación y errores
 
 - Zod valida `body`, `query` y `params`.
-- Códigos: `400` JSON malformado, `401` sin token/Token inválido, `403` sin permiso,
-  `404` no existe, `409` conflicto (correo duplicado), `422` validación/regla de negocio,
-  `500` error inesperado.
+- Códigos: `400` JSON o multipart malformado, `401` sin token/token inválido, `403` sin permiso,
+  `404` no existe, `409` conflicto (correo duplicado), `413` archivo o cuerpo demasiado grande,
+  `415` tipo de archivo no permitido, `422` validación/regla de negocio, `500` error inesperado.
+  Lista completa en `docs/API.md` §1.
 - Nunca se filtra el stack trace ni detalles de SQL en producción.
-- `asyncHandler` captura promesas rechazadas.
 
 ---
 
@@ -366,7 +380,8 @@ tendrá un endpoint, pero se protege con firewall, usuario limitado, contraseña
      `node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 12))" 'TuContraseñaLarga1'`
      e insértalo con
      `INSERT INTO users (name, email, password_hash, role) VALUES ('Nombre', 'correo', '<hash>', 'operador');`
-   - Crear las categorías desde la app o con `POST /api/categories` como ese operador.
+   - Crear las categorías con `POST /api/categories` (por ejemplo con `curl`) usando el token
+     de ese operador. La app no tiene pantalla para administrar categorías.
 8. Verificar `/api/health`, `/api/health/db`, login, subida de foto y acceso desde dos
    dispositivos.
 9. Programar respaldo de MySQL y del volumen de uploads.
@@ -399,7 +414,9 @@ lo que evita problemas de CORS:
 
 #### Referencia de `docker-compose.yml`
 
-Este archivo se activa cuando existan `backend/Dockerfile` y el build web. La base de datos no
+Es el compose de **producción** (el de desarrollo, en la raíz, solo levanta MySQL). Usa las
+mismas variables `DB_*` que `.env.example`, pero en el `.env` del servidor `DB_HOST` debe ser
+`db` y `DB_PORT` `3306`, porque la API se conecta por la red interna. La base de datos no
 publica puertos:
 
 ```yaml
@@ -483,7 +500,7 @@ divide en partes iguales o se reembolsa a quien pague.
 | Base de datos central persistente | MySQL con volumen `mysql_data` |
 | Web publicada | Flutter Web servido por Caddy |
 | Android ejecutable en físico | APK firmado apuntando al dominio |
-| Escritorio ejecutable | Build Linux/Windows apuntando al dominio |
+| Escritorio ejecutable | Build Linux apuntando al dominio |
 | Comunicación entre dispositivos | Todos usan el mismo backend y la misma DB |
 | Evidencias persistentes | Volumen `uploads` |
 | Historial y reglas de negocio | Se validan en el backend, no en la DB pública |
@@ -505,21 +522,21 @@ gratuitos que cambian. Para una demo académica estable, el VPS único es más p
 ```env
 NODE_ENV=production
 PORT=3000
-DB_HOST=...
+DB_HOST=db
 DB_PORT=3306
+DB_NAME=sigse
 DB_USER=...
 DB_PASSWORD=...
-DB_NAME=sigse
+DB_ROOT_PASSWORD=...
 JWT_SECRET=<cadena larga aleatoria>
 JWT_EXPIRES_IN=8h
 CORS_ORIGIN=https://tu-web.example.com
-PUBLIC_BASE_URL=https://tu-api.example.com
-UPLOAD_DIR=uploads
-MAX_UPLOAD_MB=8
+# UPLOAD_DIR=/app/uploads   (opcional; es el valor por defecto en Docker)
 ```
 
 - `CORS_ORIGIN` debe listar el dominio web real, no `*` en producción.
-- `PUBLIC_BASE_URL` se usa para construir URLs absolutas de evidencias.
+- La API devuelve rutas relativas de evidencias (`/uploads/<uuid>.<ext>`); el cliente les
+  antepone el origen de la API. El límite de 8 MB está fijo en `backend/src/storage/evidences.js`.
 - Cambiar `JWT_SECRET` y contraseñas demo antes de publicar.
 
 ### 6.4 Builds
@@ -529,11 +546,12 @@ MAX_UPLOAD_MB=8
 flutter build web --release --dart-define=API_BASE_URL=https://api.example.com/api
 # APK
 flutter build apk --release --dart-define=API_BASE_URL=https://api.example.com/api
-# Linux
+# Linux (versión de escritorio)
 flutter build linux --release --dart-define=API_BASE_URL=https://api.example.com/api
-# Windows (en Windows)
-flutter build windows --release --dart-define=API_BASE_URL=https://api.example.com/api
 ```
+
+La versión de escritorio es **Linux**: `app/` no tiene `windows/` y el PDF no exige un sistema
+operativo de escritorio específico.
 
 El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` como Release.
 
@@ -561,7 +579,7 @@ El APK se firma; no subir `key.properties` ni el keystore. Publicar el `.apk` co
 - JWT con expiración; no guardar secretos en el cliente.
 - Validación y autorización en cada endpoint sensible.
 - Consultas parametrizadas; nunca concatenar SQL con entrada del usuario.
-- Rate limiting en login (recomendado) y límites de tamaño de archivo.
+- Rate limiting en login (**obligatorio antes de publicar**, ver §8) y límites de tamaño de archivo.
 - `helmet` para cabeceras; CORS restringido.
 - Sanitizar nombres de archivo y validar MIME real.
 - No exponer `.env`, `uploads` con listado de directorios ni stack traces.

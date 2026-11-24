@@ -34,7 +34,7 @@ Projects, ramas y PRs; despliegue y defensa individual.
 | Regla de negocio | Finalizar exige `review_result` + `final_condition` (backend + CHECK SQL) |
 | Fotografía | `image_picker` (cámara y galería) + subida multipart |
 | Geolocalización | `geolocator` + visualización con `flutter_map`/OSM |
-| Acelerómetro | Medición de inclinación de la señal (`tilt_degrees`) y brújula/nivel |
+| Acelerómetro | Medición de inclinación de la señal (`tilt_degrees`) como nivel |
 | Gestos y animaciones | Swipe, long-press, pull-to-refresh, Hero, AnimatedSwitcher |
 | Persistencia local | Sesión, preferencias y caché JSON de inspecciones con `shared_preferences` |
 | API REST propia | Express + JWT, documentada en `docs/API.md` |
@@ -124,7 +124,7 @@ todos tocan Flutter, API, pruebas y documentación.
 | --- | --- | ---: | --- | --- |
 | E1 | Repo, organización, protecciones, labels, Projects, plantillas, CI | 6 | — | `main` protegida, CI verde, Issues/PR templates y tablero de 4 columnas |
 | E2 | Core Flutter: tema, navegación responsiva, `ApiClient`, storage, modelos base, widgets | 9 | E1 | App compila; `flutter analyze` limpio; patrón documentado |
-| E3 | Auth UI (login/registro), sesión persistente (`SessionStore`) y pantalla principal con conteos | 6 | E2, E6 | Login real contra API; sesión sobrevive reinicio; logout limpio; la pantalla principal muestra los conteos de `/inspections/stats/summary` (endpoint de A1; con datos falsos hasta que exista) |
+| E3 | Auth UI (login/registro), sesión persistente (`SessionStore`) y pantalla principal con conteos | 6 | E2, E6 | Login real contra API; sesión sobrevive reinicio; logout limpio; la pantalla principal muestra los conteos reales de `/inspections/stats/summary` (endpoint de A1, ya integrado) |
 | E4 | Integración E2E, builds Android/web/Linux, deploy API/DB/web, APK | 7 | E3, D3, A3 | URL web pública, APK instalable, API accesible desde otro dispositivo; evidencia de la prueba 9.2 (persistencia tras reiniciar el servidor desplegado) |
 | E5 | Coordinación, reporte técnico, presentación y ensayo de defensa | 4 | todas | Reporte completo, README de instalación y ejecución consolidado, y demo ensayada sin errores críticos |
 | E6 | Backend de autenticación: `/auth/register`, `/auth/login`, JWT, bcryptjs y middleware de roles + tests | 3 | A0, D1 | Registro (siempre rol `usuario`) y login devuelven JWT; el middleware responde 401/403; probado con curl/supertest |
@@ -294,7 +294,7 @@ Una tarea solo se cierra si:
 - [ ] MySQL central con datos persistentes.
 - [ ] APK Android instalable en dispositivo físico.
 - [ ] Versión web publicada.
-- [ ] Versión de escritorio ejecutable (Linux/Windows).
+- [ ] Versión de escritorio ejecutable (Linux).
 - [ ] Pruebas 9.1–9.5 con evidencia (capturas/video y matriz llenada).
 - [ ] Reporte técnico con las 22 secciones del PDF.
 - [ ] Presentación y guion de demostración.
