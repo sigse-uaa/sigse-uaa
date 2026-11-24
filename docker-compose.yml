@@ -1,27 +1,23 @@
 services:
-
   db:
     image: mysql:8.4
-    container_name: mysql_dataDBSU
-
+    container_name: sigse-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD_ROOT}
-      MYSQL_DATABASE: ${SQL_DB}
-      MYSQL_USER: ${SQL_USER}
-      MYSQL_PASSWORD: ${SQL_PASSWORD}
-
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${SQL_PORT}:3306"
-    
-    
+      # Solo accesible desde este equipo.
+      - "127.0.0.1:${DB_PORT}:3306"
     volumes:
+      # Volumen con los datos de MySQL. No cambiar el nombre: Docker crearía uno vacío
+      # y los datos guardados dejarían de verse.
       - mysql_dataDB:/var/lib/mysql
+      # Formato origen:destino. MySQL ejecuta estos archivos en orden solo cuando el volumen está vacío.
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
-#REcuerda los volumenes primero van de donde a donde tomamos schema y seed por eso es ./seed y ./schema
-#el primer mysql_data1 es donde se va a guadrar las cosas 
     restart: unless-stopped
-
 
 volumes:
   mysql_dataDB:

@@ -24,7 +24,7 @@
 | 13 | Manejo de estado | Provider, ciclo de vida, estados UI | Edson | código |
 | 14 | Recursos móviles | Cámara, galería, GPS, acelerómetro, permisos | Alonso | código + pruebas |
 | 15 | Persistencia local | shared_preferences, caché, offline | Diana | código |
-| 16 | Comunicación entre dispositivos | Flujo HTTP, prueba 9.1, evidencia | Alonso | `docs/PRUEBAS.md` |
+| 16 | Comunicación entre dispositivos | Flujo HTTP, prueba 9.1, evidencia | Diana | `docs/PRUEBAS.md` |
 | 17 | Organización del trabajo en GitHub | Issues, Projects, ramas, PRs, CI | Edson | GitHub |
 | 18 | Pruebas realizadas | 9.1–9.5, matriz, resultados | Todos | `docs/PRUEBAS.md` |
 | 19 | Resultados obtenidos | Capturas, métricas, estado final | Todos | demo |
@@ -154,8 +154,8 @@ El profesor puede preguntar a cualquiera sobre cualquier componente. Preparar re
 | Persona | Secciones | Peso |
 | --- | --- | --- |
 | Edson | 1, 2, 4, 5, 8, 9, 12, 13, 17, 22 | ~34 % |
-| Diana | 3, 6, 7, 10, 11, 15, 18 (apoyo), 19 (apoyo) | ~33 % |
-| Alonso | 12 (apoyo), 14, 16, 18, 19, 20 | ~33 % |
+| Diana | 3, 6, 7, 10, 11, 15, 16, 18 (apoyo) | ~33 % |
+| Alonso | 12 (apoyo), 14, 18, 19, 20 | ~33 % |
 | Todos | 21 conclusiones y revisión final | — |
 
 La portada y la bibliografía las consolida Edson; la revisión final es cruzada.

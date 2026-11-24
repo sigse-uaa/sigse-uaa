@@ -46,7 +46,7 @@
 | 6 | Recargar en A | A ve el estado actualizado | Captura |
 | 7 | Finalizar desde B con resultado y condición | A ve `finalizada` e historial | Video |
 
-**Dueño:** Alonso · **Verifica:** Diana · **Fecha:** ____ · **Estado:** ⬜
+**Dueño:** Diana (D5) · **Verifica:** Alonso · **Fecha:** ____ · **Estado:** ⬜
 
 ### 9.2 Persistencia
 
@@ -58,7 +58,7 @@
 | 4 | Consultar la inspección | Sigue existiendo con los mismos datos |
 | 5 | Verificar evidencia | Archivo sigue en `/uploads` |
 
-**Dueño:** Diana · **Verifica:** Edson · **Fecha:** ____ · **Estado:** ⬜
+**Dueño:** Edson (E4) · **Verifica:** Diana · **Fecha:** ____ · **Estado:** ⬜
 
 ### 9.3 Conexión / offline
 
@@ -70,7 +70,7 @@
 | 4 | Intentar crear/editar | Mensaje claro; no se pierde el formulario |
 | 5 | Restaurar conexión y refrescar | Datos actualizados, aviso desaparece |
 
-**Dueño:** Edson · **Verifica:** Alonso · **Fecha:** ____ · **Estado:** ⬜
+**Dueño:** Diana (D3) · **Verifica:** Edson · **Fecha:** ____ · **Estado:** ⬜
 
 ### 9.4 Recursos móviles
 
@@ -85,7 +85,7 @@
 | Gestos | Pull-to-refresh, swipe, long-press | Acciones funcionan sin errores | Android |
 | Animaciones | Abrir detalle / cambiar estado | Transiciones fluidas | Todas |
 
-**Dueño:** Alonso · **Verifica:** Edson · **Fecha:** ____ · **Estado:** ⬜
+**Dueño:** Alonso (A5) · **Verifica:** Edson · **Fecha:** ____ · **Estado:** ⬜
 
 ### 9.5 Validaciones y reglas
 
@@ -104,7 +104,7 @@
 | Token expirado | JWT vencido | `401` + regreso a login |
 | API caída | Detener backend | UI informa, no se cierra |
 
-**Dueño:** Diana · **Verifica:** Alonso · **Fecha:** ____ · **Estado:** ⬜
+**Dueño:** Diana (D5) · **Verifica:** Alonso · **Fecha:** ____ · **Estado:** ⬜
 
 ---
 
@@ -147,7 +147,7 @@ Cobertura mínima esperada:
 - Permisos por rol (middleware).
 - A1: creación con folio e historial, permisos de listado y edición, transiciones concurrentes,
   finalización, subida/descarga/borrado y conteos. El CI levanta MySQL 8.4 para esta suite.
-  En local, configúrala con `A1_TEST_MYSQL_PORT` y `A1_TEST_MYSQL_PASSWORD` apuntando a una
+  En local, configúrala con `TEST_MYSQL_PORT` y `TEST_MYSQL_PASSWORD` apuntando a una
   instancia de pruebas en `127.0.0.1`. La suite crea un esquema temporal y carga el SQL del repo.
 
 ### Flutter
@@ -168,8 +168,9 @@ Cobertura mínima esperada:
 
 ```bash
 cd app && flutter analyze
-cd backend && npm test
 ```
+
+El backend no tiene linter; su verificación es `npm test`.
 
 ---
 
@@ -197,14 +198,13 @@ cd backend && npm test
 | Web Chrome | ____ | Edson | ⬜ |
 | Web Firefox/Edge | ____ | Edson | ⬜ |
 | Linux escritorio | ____ | Edson | ⬜ |
-| Windows escritorio | ____ | ____ | ⬜ |
 
 ---
 
 ## 7. Gestión de defectos
 
 1. Detectar → crear Issue con plantilla de bug.
-2. Etiquetar `type:bug` + `area:*` + prioridad.
+2. Etiquetar `bug` + `area:*` y fijar el campo Priority del tablero.
 3. Asignar a responsable del módulo.
 4. Corregir en rama `fix/...` + PR.
 5. Añadir prueba de regresión.

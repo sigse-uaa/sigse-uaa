@@ -40,11 +40,13 @@
 | `200` | Consulta/actualización correcta |
 | `201` | Recurso creado |
 | `204` | Sin contenido (borrado lógico) |
-| `400` | JSON malformado o parámetros inválidos |
+| `400` | JSON malformado (`INVALID_JSON`) o multipart malformado (`INVALID_MULTIPART`) |
 | `401` | Token ausente, inválido o expirado |
 | `403` | Sin permiso para la operación |
 | `404` | Recurso inexistente |
 | `409` | Conflicto (correo duplicado, categoría duplicada) |
+| `413` | Archivo de más de 8 MB (`FILE_TOO_LARGE`) o cuerpo JSON demasiado grande (`PAYLOAD_TOO_LARGE`) |
+| `415` | Tipo de archivo no permitido (`UNSUPPORTED_FILE_TYPE`) |
 | `422` | Validación o regla de negocio incumplida |
 | `500` | Error no controlado |
 | `503` | MySQL no está disponible para la comprobación de salud |
@@ -142,14 +144,14 @@ Reglas: nombre 3–120, correo válido, contraseña ≥ 8 con al menos una letra
 | `403` | `FORBIDDEN` | El rol no puede realizar la operación |
 
 El correo se normaliza (sin espacios y en minúsculas) tanto en el registro como en el login.
-La contraseña admite hasta 72 caracteres, el límite de bcrypt.
+La contraseña admite hasta 72 **bytes** (límite de bcrypt): con acentos o emojis caben menos de 72 caracteres.
 
 ### `GET /auth/me` — autenticado
 
 **200**
 
 ```json
-{ "user": { "id": 3, "name": "Usuario Demo", "email": "usuario@example.com", "role": "usuario", "isActive": true } }
+{ "user": { "id": 3, "name": "Usuario Demo", "email": "usuario@example.com", "role": "usuario" } }
 ```
 
 ---
@@ -163,7 +165,7 @@ Lista usuarios activos. Filtros: `?role=operador`, `?q=texto`.
 ```json
 {
   "data": [
-    { "id": 1, "name": "Operador Demo 1", "email": "operador1@example.com", "role": "operador", "isActive": true }
+    { "id": 1, "name": "Operador Demo 1", "email": "operador1@example.com", "role": "operador" }
   ]
 }
 ```
@@ -202,7 +204,7 @@ Devuelve categorías activas. `?includeInactive=true` solo para operador.
 ```json
 {
   "data": [
-    { "id": 1, "name": "Evacuación", "description": "Rutas y salidas de emergencia", "color": "#D32F2F", "icon": "exit_to_app", "isActive": true }
+    { "id": 1, "name": "Evacuación", "description": "Salidas de emergencia, señalización y puntos de reunión.", "color": "#2E7D32", "icon": "exit_to_app", "isActive": true }
   ]
 }
 ```
@@ -263,11 +265,11 @@ Lista paginada. El usuario general solo ve las suyas; el operador ve todas.
       "status": "pendiente",
       "priority": "alta",
       "category": { "id": 3, "name": "Equipo contra incendio" },
-      "createdBy": { "id": 2, "name": "Usuario Demo" },
+      "createdBy": { "id": 3, "name": "Usuario Demo" },
       "assignedTo": null,
       "building": "Edificio 14",
       "area": "Pasillo norte",
-      "latitude": 21.8847,
+      "latitude": 21.9131,
       "longitude": -102.3157,
       "createdAt": "2026-11-18T18:30:00.000Z",
       "updatedAt": "2026-11-18T18:30:00.000Z"
@@ -292,13 +294,13 @@ Si se omite la prioridad, usa `media`.
   "building": "Edificio 14",
   "area": "Pasillo norte",
   "reference": "Frente al aula 204",
-  "latitude": 21.8847,
+  "latitude": 21.9131,
   "longitude": -102.3157,
   "tiltDegrees": 3.5
 }
 ```
 
-**201** con `{ "data": { ... } }`, el encabezado `Location` y un folio `SIG-AAAA-ID` con
+**201** con `{ "data": { ... } }` (sin `evidences` ni `history`), el encabezado `Location` y un folio `SIG-AAAA-ID` con
 el ID rellenado a al menos cinco dígitos. Guarda el registro y el evento `creacion` en la
 misma transacción. Devuelve **422** si la categoría no existe o está inactiva.
 
@@ -316,12 +318,12 @@ misma transacción. Devuelve **422** si la categoría no existe o está inactiva
     "status": "en_proceso",
     "priority": "alta",
     "category": { "id": 1, "name": "Evacuación" },
-    "createdBy": { "id": 2, "name": "Usuario Demo" },
-    "assignedTo": { "id": 1, "name": "Operador Demo" },
+    "createdBy": { "id": 3, "name": "Usuario Demo" },
+    "assignedTo": { "id": 1, "name": "Operador Demo 1" },
     "building": "Edificio 14",
     "area": "Pasillo norte",
     "reference": "Frente al aula 204",
-    "latitude": 21.8847,
+    "latitude": 21.9131,
     "longitude": -102.3157,
     "tiltDegrees": 3.5,
     "reviewResult": null,
@@ -336,12 +338,12 @@ misma transacción. Devuelve **422** si la categoría no existe o está inactiva
       {
         "id": 5,
         "type": "foto",
-        "filePath": "/uploads/1731950000000-abc.jpg",
+        "filePath": "/uploads/3f2b9c1e-7a4d-4c2b-9b8e-1d5f6a7c8e90.jpg",
         "originalName": "senal.jpg",
         "mimeType": "image/jpeg",
         "sizeBytes": 245000,
         "description": "Vista frontal",
-        "uploadedBy": { "id": 2, "name": "Usuario Demo" },
+        "uploadedBy": { "id": 3, "name": "Usuario Demo" },
         "createdAt": "2026-11-18T18:35:00.000Z"
       }
     ],
@@ -352,7 +354,7 @@ misma transacción. Devuelve **422** si la categoría no existe o está inactiva
         "previousStatus": null,
         "newStatus": "pendiente",
         "comment": "Inspección registrada",
-        "changedBy": { "id": 2, "name": "Usuario Demo" },
+        "changedBy": { "id": 3, "name": "Usuario Demo" },
         "createdAt": "2026-11-18T18:30:00.000Z"
       }
     ]
@@ -371,7 +373,8 @@ Campos editables: `title`, `description`, `categoryId`, `priority`, `building`, 
 { "title": "Señal obstruida por mueble", "priority": "media" }
 ```
 
-**200** con la inspección actualizada en `data`. Un usuario general solo puede editar sus
+**200** con la inspección actualizada en `data` (mismos campos que el detalle, pero sin
+`evidences` ni `history`; para verlos, usa `GET /inspections/:id`). Un usuario general solo puede editar sus
 inspecciones pendientes. Operadores pueden editar cualquier inspección en curso. Devuelve
 **403** si no hay permiso y **422** si un operador intenta editar una inspección finalizada
 o cancelada. Registra historial `actualizacion`.
@@ -423,7 +426,8 @@ Body según transición:
 **Regla:** para `finalizada`, `reviewResult` debe tener al menos 10 caracteres y
 `finalCondition` debe ser `buena`, `regular`, `mala` o `reemplazada`. Si falta algo → **422**.
 
-**200** con la inspección actualizada en `data`. **403** rol no permitido. **422** transición
+**200** con la inspección actualizada en `data` (mismos campos que el detalle, pero sin
+`evidences` ni `history`; para verlos, usa `GET /inspections/:id`). **403** rol no permitido. **422** transición
 inválida o regla incumplida. Al asignar, el destino debe ser un operador activo. Cada cambio
 se guarda junto con su historial en una transacción. La cancelación conserva la inspección y
 sus datos.
@@ -444,11 +448,12 @@ sus datos.
   "data": {
     "id": 6,
     "type": "foto",
-    "filePath": "/uploads/1731951111111-def.jpg",
+    "filePath": "/uploads/8c1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5.jpg",
     "originalName": "senal.jpg",
     "mimeType": "image/jpeg",
     "sizeBytes": 210000,
     "description": "Después de la atención",
+    "uploadedBy": { "id": 1, "name": "Operador Demo 1" },
     "createdAt": "2026-11-18T19:30:00.000Z"
   }
 }
@@ -475,7 +480,7 @@ archivo ya no se puede descargar.
       "previousStatus": "asignada",
       "newStatus": "en_proceso",
       "comment": "Se inicia revisión en sitio",
-      "changedBy": { "id": 1, "name": "Operador Demo" },
+      "changedBy": { "id": 1, "name": "Operador Demo 1" },
       "createdAt": "2026-11-18T19:10:00.000Z"
     }
   ]
@@ -537,15 +542,15 @@ curl -s "$BASE/inspections?status=pendiente&page=1&limit=10" \
 curl -s -X POST "$BASE/inspections" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"title":"Señal dañada","description":"La lámpara no enciende","categoryId":1,"priority":"alta","latitude":21.8847,"longitude":-102.3157}' | jq
+  -d '{"title":"Señal dañada","description":"La lámpara no enciende","categoryId":1,"priority":"alta","latitude":21.9131,"longitude":-102.3157}' | jq
 
-# Subir evidencia
-curl -s -X POST "$BASE/inspections/12/evidences" \
+# Subir evidencia (la inspección 3 del seed está en_proceso)
+curl -s -X POST "$BASE/inspections/3/evidences" \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@senal.jpg" -F "description=Vista frontal" | jq
 
 # Finalizar (regla de negocio)
-curl -s -X PATCH "$BASE/inspections/12/status" \
+curl -s -X PATCH "$BASE/inspections/3/status" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"status":"finalizada","reviewResult":"Se reemplazó la señal y se verificó","finalCondition":"reemplazada"}' | jq

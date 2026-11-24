@@ -8,7 +8,7 @@ permite subir cambios directamente**. Todo cambio entra por una solicitud de cam
 
 1. Toma o crea una incidencia (*Issue*) y asígnatela antes de empezar.
 2. Crea una rama desde `main` actualizada. Usa los prefijos técnicos del proyecto:
-   `feature/…`, `fix/…`, `docs/…` o `test/…`.
+   `feature/…`, `fix/…`, `docs/…`, `test/…` o `chore/…`.
 3. Haz commits pequeños y atómicos con el formato de **commits convencionales**
    (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
 4. Abre una solicitud de cambios (PR) enlazando la incidencia (`Closes #N`).
