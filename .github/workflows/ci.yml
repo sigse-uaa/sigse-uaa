@@ -77,6 +77,6 @@ jobs:
 
       - name: Ejecutar pruebas
         env:
-          A1_TEST_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
-          A1_TEST_MYSQL_PASSWORD: sigse-local-test-only
+          TEST_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
+          TEST_MYSQL_PASSWORD: sigse-local-test-only
         run: npm test

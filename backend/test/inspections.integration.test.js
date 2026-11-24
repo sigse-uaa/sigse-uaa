@@ -13,7 +13,7 @@ const { createInspectionsService } = require('../src/services/inspections.servic
 const { createEvidenceStorage, MAX_FILE_BYTES } = require('../src/storage/evidences');
 const { listen, postJson, SEED_PASSWORD } = require('../testing/helpers');
 
-const MYSQL_PORT = process.env.A1_TEST_MYSQL_PORT;
+const MYSQL_PORT = process.env.TEST_MYSQL_PORT;
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jfZkAAAAASUVORK5CYII=',
   'base64',
@@ -24,7 +24,7 @@ async function startApi(t) {
     host: '127.0.0.1',
     port: Number(MYSQL_PORT),
     user: 'root',
-    password: process.env.A1_TEST_MYSQL_PASSWORD,
+    password: process.env.TEST_MYSQL_PASSWORD,
     timezone: 'Z',
     connectTimeout: 5000,
   };
@@ -94,7 +94,7 @@ function upload(data, type = 'image/png', description = 'Vista de prueba') {
 const validFields = { title: 'Señal de prueba 50%_A', description: 'La señal requiere revisión.', categoryId: 1 };
 
 test('A1 con MySQL: inspecciones, permisos, transiciones, historia, evidencias y conteos', {
-  skip: !MYSQL_PORT && 'Configura A1_TEST_MYSQL_PORT para ejecutar contra MySQL 8.4.',
+  skip: !MYSQL_PORT && 'Configura TEST_MYSQL_PORT para ejecutar contra MySQL 8.4.',
   timeout: 90_000,
 }, async (t) => {
   const { url, uploads, pool } = await startApi(t);
