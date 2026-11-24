@@ -188,10 +188,21 @@ incluya las siguientes variables. Git ignora el archivo local.
 | `UPLOAD_DIR` | Carpeta de evidencias. Opcional; por defecto `backend/uploads`. |
 | `TEST_MYSQL_PORT`, `TEST_MYSQL_PASSWORD` | Opcionales: activan las pruebas de integración contra MySQL (ver §4.4). |
 
-> **Si tu `.env` es anterior al 23 de noviembre** y usa `SQL_DB`, `SQL_USER`, etc., vuelve a
-> copiarlo desde `.env.example`: esos nombres ya no se leen. Como también cambiaron el volumen
-> y el seed, ejecuta `docker compose down -v` **antes** de actualizar tu rama para borrar el
-> volumen viejo, y luego levanta la base como se indica abajo.
+> **Si tu `.env` es anterior al 23 de noviembre** y usa `SQL_DB`, `SQL_USER`, etc., renombra
+> esas claves **conservando sus valores** (no copies la plantilla encima: perderías tus
+> contraseñas y tu `JWT_SECRET`, y MySQL rechazaría la conexión con `ER_ACCESS_DENIED_ERROR`):
+>
+> | Antes | Ahora |
+> | --- | --- |
+> | `SQL_DB=sigse` | `DB_NAME=sigse` |
+> | `SQL_USER=...` | `DB_USER=...` |
+> | `SQL_PASSWORD=...` | `DB_PASSWORD=...` |
+> | `SQL_PASSWORD_ROOT=...` | `DB_ROOT_PASSWORD=...` |
+> | `SQL_PORT=127.0.0.1:3306` | `DB_HOST=127.0.0.1` y `DB_PORT=3306` (solo el número) |
+>
+> Tus datos se conservan: el volumen de MySQL no cambió. El seed nuevo (acentos y coordenadas)
+> solo se carga en una base vacía; si quieres verlo, reinicia la base como indica el paso 4,
+> sabiendo que eso **borra** tus datos locales.
 
 **2. Inicia el servicio.**
 
@@ -271,8 +282,18 @@ de inspecciones (`test/inspections.integration.test.js`) sí corre contra MySQL 
 correrla en local con la base de Compose:
 
 ```bash
-TEST_MYSQL_PORT=3306 TEST_MYSQL_PASSWORD=<tu DB_ROOT_PASSWORD> npm test
+TEST_MYSQL_PORT=3306 TEST_MYSQL_PASSWORD='RPassword' npm test
 ```
+
+En PowerShell:
+
+```powershell
+$env:TEST_MYSQL_PORT='3306'; $env:TEST_MYSQL_PASSWORD='RPassword'; npm test
+```
+
+`3306` y `RPassword` son los valores de `.env.example`; cámbialos por los de `DB_PORT` y
+`DB_ROOT_PASSWORD` de tu `.env`. Las comillas simples evitan que la terminal interprete
+caracteres especiales de la contraseña.
 
 La suite crea un esquema temporal con `root`, carga `schema.sql` y `seed.sql` y lo borra al
 terminar. En GitHub Actions siempre se ejecuta.
