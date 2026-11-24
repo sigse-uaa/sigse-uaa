@@ -28,7 +28,7 @@ Closes #
 - [ ] Probado manualmente (describir abajo)
 - [ ] Regla de finalización validada si aplica (`review_result` + `final_condition`)
 - [ ] Sin secretos, contraseñas ni datos personales en el diff
-- [ ] Documentación/ADR actualizada si cambió el contrato
+- [ ] Documentación actualizada si cambió el contrato
 
 ### Evidencia de prueba
 

@@ -50,7 +50,7 @@ body:
       options:
         - S0 · Base
         - S1 · Núcleo
-        - S2 · Recursos y operación
-        - S3 · Cierre y entrega
+        - S2 · Operación y móvil
+        - S3 · Cierre
     validations:
       required: true
