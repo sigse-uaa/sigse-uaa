@@ -50,7 +50,7 @@ CREATE TABLE `evidences` (
   `uploaded_by` bigint(20) UNSIGNED NOT NULL COMMENT 'Autor de la carga',
   `type` enum('foto','documento') NOT NULL COMMENT 'Tipo',
   `file_path` varchar(500) NOT NULL COMMENT 'Ruta relativa /uploads/...',
-  `original_name` varchar(255) NOT NULL COMMENT '	Nombre original',
+  `original_name` varchar(255) NOT NULL COMMENT 'Nombre original',
   `mime_type` varchar(100) NOT NULL COMMENT 'MIME validado',
   `size_bytes` int(10) UNSIGNED NOT NULL COMMENT 'Tamano',
   `description` varchar(255) DEFAULT NULL COMMENT 'Nota',
@@ -130,7 +130,7 @@ CREATE TABLE `users` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Baja logica',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Alta',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'Ultima modificacion'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='this is the Users table is used for aggregate users';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cuentas de usuarios generales y operadores';
 
 --
 -- Indices para tablas volcadas
