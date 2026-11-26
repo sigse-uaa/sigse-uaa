@@ -10,6 +10,7 @@ const { ApiError } = require('../errors');
  * `authorize('operador')` debe ir después de `authenticate`.
  */
 function createAuthMiddleware(authService) {
+
   async function authenticate(request, _response, next) {
     const header = request.get('Authorization');
     if (!header) {

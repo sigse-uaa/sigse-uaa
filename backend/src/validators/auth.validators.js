@@ -36,4 +36,6 @@ const loginSchema = z.object({
     .refine(fitsBcrypt, TOO_LONG),
 });
 
+
+
 module.exports = { registerSchema, loginSchema };

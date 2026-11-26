@@ -9,8 +9,17 @@ const { validateParams } = require('./middleware/validate');
 const { createAuthRouter } = require('./routes/auth.routes');
 const { createInspectionsRouter } = require('./routes/inspections.routes');
 const { downloadParams } = require('./validators/inspections.validators');
+const { createUsersRouter } = require('./routes/users.routes');
+const { createUsersController } = require('./controllers/users.controller');
+const { createUsersRepository } = require('./repositories/users.repository');
+const { createUsersService } = require('./services/users.service');
+const { pool } = require('./database');
+const { createCategoriesRouter } = require('./routes/categories.routes');
+const { createCategoriesController } = require('./controllers/categories.controller');
+const { createCategoriesRepository } = require('./repositories/categories.repository');
+const { createCategoriesService } = require('./services/categories.service');
 
-function createApp({ checkDatabase, corsOptions, authService, inspectionsService }) {
+function createApp({ checkDatabase, corsOptions, authService, inspectionsService, usersService, categoriesService }) {
   const app = express();
   const api = express.Router();
 
@@ -47,12 +56,19 @@ function createApp({ checkDatabase, corsOptions, authService, inspectionsService
   // `authenticate` y `authorize` se pasan a los routers que los necesiten
   // (usuarios, categorías, inspecciones...).
   const auth = createAuthMiddleware(authService);
-  api.use('/auth', createAuthRouter(createAuthController(authService)));
+  const authController = createAuthController(authService);
+  api.use('/auth', createAuthRouter(authController, auth));
   if (inspectionsService) {
     const controller = createInspectionsController(inspectionsService);
     api.use('/inspections', createInspectionsRouter(controller, auth.authenticate));
     app.get('/uploads/:filename', auth.authenticate, validateParams(downloadParams), controller.download);
   }
+
+  const usersController = createUsersController(usersService ?? createUsersService(createUsersRepository(pool)));
+  const usersRouter = createUsersRouter({ me: authController.me, ...usersController }, auth);
+  api.use('/users', usersRouter);
+  const categories = categoriesService ?? createCategoriesService(createCategoriesRepository(pool));
+  api.use('/categories', createCategoriesRouter(createCategoriesController(categories), auth));
 
   app.use('/api', api);
   app.use((_request, _response, next) => {

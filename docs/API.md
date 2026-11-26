@@ -191,7 +191,7 @@ Crea un operador.
 { "name": "Nuevo Operador", "email": "operador3@example.com", "password": "Operador123!" }
 ```
 
-**201** con el usuario creado.
+**201** con `{ "user": { ... } }` y el rol `operador`. **409 `EMAIL_TAKEN`** si el correo existe.
 
 ---
 
@@ -215,7 +215,7 @@ Devuelve categorías activas. `?includeInactive=true` solo para operador.
 { "name": "Informativa", "description": "Señales informativas", "color": "#1976D2", "icon": "info" }
 ```
 
-**201** · **409** si el nombre existe.
+**201** con `{ "data": { ... } }`. **409 `CATEGORY_NAME_TAKEN`** si el nombre existe.
 
 ### `PATCH /categories/:id` — operador
 
@@ -223,7 +223,7 @@ Devuelve categorías activas. `?includeInactive=true` solo para operador.
 { "name": "Informativa y direccional", "isActive": false }
 ```
 
-**200** con la categoría actualizada.
+**200** con `{ "data": { ... } }`. **404 `NOT_FOUND`** si no existe y **409 `CATEGORY_NAME_TAKEN`** si el nombre ya está en uso.
 
 ### `DELETE /categories/:id` — operador
 

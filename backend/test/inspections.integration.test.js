@@ -8,7 +8,10 @@ const mysql = require('mysql2/promise');
 const { createApp } = require('../src/app');
 const { createInspectionsRepository } = require('../src/repositories/inspections.repository');
 const { createUsersRepository } = require('../src/repositories/users.repository');
+const { createCategoriesRepository } = require('../src/repositories/categories.repository');
 const { createAuthService } = require('../src/services/auth.service');
+const { createUsersService } = require('../src/services/users.service');
+const { createCategoriesService } = require('../src/services/categories.service');
 const { createInspectionsService } = require('../src/services/inspections.service');
 const { createEvidenceStorage, MAX_FILE_BYTES } = require('../src/storage/evidences');
 const { listen, postJson, SEED_PASSWORD } = require('../testing/helpers');
@@ -53,6 +56,8 @@ async function startApi(t) {
   const uploads = await mkdtemp(path.join(os.tmpdir(), 'sigse-a1-uploads-'));
   t.after(() => rm(uploads, { recursive: true, force: true }));
   const app = createApp({
+    usersService: createUsersService(createUsersRepository(pool)),
+    categoriesService: createCategoriesService(createCategoriesRepository(pool)),
     authService: createAuthService({
       users: createUsersRepository(pool),
       jwtSecret: randomBytes(32).toString('hex'),
@@ -92,6 +97,78 @@ function upload(data, type = 'image/png', description = 'Vista de prueba') {
 }
 
 const validFields = { title: 'Señal de prueba 50%_A', description: 'La señal requiere revisión.', categoryId: 1 };
+
+test('identidad y categorías con MySQL', {
+  skip: !MYSQL_PORT && 'Configura TEST_MYSQL_PORT para ejecutar contra MySQL 8.4.',
+  timeout: 90_000,
+}, async (t) => {
+  const { url } = await startApi(t);
+  const operator = await login(url, 'operador1@example.com');
+  const owner = await login(url, 'usuario@example.com');
+  const api = (session, path, method = 'GET', json) => request(url, session?.token, '/api' + path, { method, json });
+
+  await t.test('perfil y operadores', async () => {
+    await expectJson(await api(null, '/auth/me'), 401, 'MISSING_TOKEN');
+    const profile = await expectJson(await api(owner, '/auth/me'), 200);
+    assert.deepEqual(await expectJson(await api(owner, '/users/me'), 200), profile);
+    assert.equal(profile.user.isActive, true);
+    await expectJson(await api(owner, '/users/me', 'PATCH', { newPassword: 'Nueva123!' }), 422, 'VALIDATION_ERROR');
+    await expectJson(await api(owner, '/users/me', 'PATCH', {
+      name: 'Nombre fallido', currentPassword: 'Incorrecta123!', newPassword: 'Nueva123!',
+    }), 422, 'VALIDATION_ERROR');
+    assert.deepEqual(await expectJson(await api(owner, '/users/me'), 200), profile);
+    const updated = await expectJson(await api(owner, '/users/me', 'PATCH', {
+      name: 'Nombre actualizado', currentPassword: SEED_PASSWORD, newPassword: 'Nueva123!',
+    }), 200);
+    assert.equal(updated.user.name, 'Nombre actualizado');
+    await expectJson(await api(null, '/auth/login', 'POST', {
+      email: owner.user.email, password: 'Nueva123!',
+    }), 200);
+
+    await expectJson(await api(null, '/users'), 401, 'MISSING_TOKEN');
+    await expectJson(await api(owner, '/users'), 403, 'FORBIDDEN');
+    await expectJson(await api(operator, '/users?role=otro'), 422, 'VALIDATION_ERROR');
+    const input = { name: 'Operador Fixture', email: 'fixture@example.invalid', password: 'Operador123!' };
+    await expectJson(await api(owner, '/users', 'POST', input), 403, 'FORBIDDEN');
+    await expectJson(await api(operator, '/users', 'POST', { ...input, password: 'corta' }), 422, 'VALIDATION_ERROR');
+    const { user } = await expectJson(await api(operator, '/users', 'POST', input), 201);
+    assert.deepEqual(user, { id: user.id, name: input.name, email: input.email, role: 'operador' });
+    await expectJson(await api(null, '/auth/login', 'POST', { email: input.email, password: input.password }), 200);
+    await expectJson(await api(operator, '/users', 'POST', input), 409, 'EMAIL_TAKEN');
+    const list = await expectJson(await api(operator, '/users?role=operador&q=Fixture'), 200);
+    assert.deepEqual(list.data, [user]);
+  });
+
+  await t.test('baja lógica conserva las inspecciones', async () => {
+    const base = '/categories';
+    const input = { name: 'Categoría Fixture', description: 'Una señal', color: '#1976D2', icon: 'info' };
+    await expectJson(await api(null, base), 401, 'MISSING_TOKEN');
+    await expectJson(await api(owner, base + '?includeInactive=true'), 403, 'FORBIDDEN');
+    await expectJson(await api(owner, base, 'POST', input), 403, 'FORBIDDEN');
+    await expectJson(await api(operator, base, 'POST', { ...input, color: 'rojo' }), 422, 'VALIDATION_ERROR');
+    const { data: category } = await expectJson(await api(operator, base, 'POST', input), 201);
+    assert.deepEqual(category, { id: category.id, ...input, isActive: true });
+    await expectJson(await api(operator, base, 'POST', input), 409, 'CATEGORY_NAME_TAKEN');
+
+    const path = base + '/' + category.id;
+    await expectJson(await api(owner, path, 'PATCH', { isActive: false }), 403, 'FORBIDDEN');
+    await expectJson(await api(owner, path, 'DELETE'), 403, 'FORBIDDEN');
+    await expectJson(await api(operator, path, 'PATCH', {}), 422, 'VALIDATION_ERROR');
+    const edited = await expectJson(await api(operator, path, 'PATCH', { description: null }), 200);
+    assert.equal(edited.data.description, null);
+
+    const inspection = { ...validFields, categoryId: category.id };
+    const { data } = await expectJson(await api(owner, '/inspections', 'POST', inspection), 201);
+    const removed = await api(operator, path, 'DELETE');
+    assert.equal(removed.status, 204);
+    const active = await expectJson(await api(owner, base), 200);
+    assert.equal(active.data.some((row) => row.id === category.id), false);
+    const all = await expectJson(await api(operator, base + '?includeInactive=true'), 200);
+    assert.equal(all.data.find((row) => row.id === category.id).isActive, false);
+    await expectJson(await api(owner, '/inspections/' + data.id), 200);
+    await expectJson(await api(owner, '/inspections', 'POST', inspection), 422, 'INVALID_CATEGORY');
+  });
+});
 
 test('A1 con MySQL: inspecciones, permisos, transiciones, historia, evidencias y conteos', {
   skip: !MYSQL_PORT && 'Configura TEST_MYSQL_PORT para ejecutar contra MySQL 8.4.',

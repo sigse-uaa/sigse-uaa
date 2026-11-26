@@ -16,7 +16,7 @@ function validateRequest(source, schema) {
   return (request, _response, next) => {
     const data = parseRequest(schema, request[source]);
     if (source === 'body') {
-      request.body = data;
+      request.body = data;//que datos trae?
     } else {
       // Express expone query como getter y puede reconstruir params entre routers.
       request.validated ??= {};

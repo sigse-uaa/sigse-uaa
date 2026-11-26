@@ -9,6 +9,26 @@ function serializeUser(row) {
     role: row.role,
   };
 }
+function serializeUserPorfile(user, isActive_ = Boolean(user.is_active)) {
+  return{
+    id: Number(user.id),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: isActive_
+  };
+}
+
+function serializeCategory(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    description: row.description,
+    color: row.color,
+    icon: row.icon,
+    isActive: Boolean(row.is_active),
+  };
+}
 
 function serializePerson(id, name) {
   return { id: Number(id), name };
@@ -80,6 +100,8 @@ function serializeHistory(row) {
 
 module.exports = {
   serializeUser,
+  serializeUserPorfile,
+  serializeCategory,
   serializeInspection,
   serializeInspectionDetail,
   serializeEvidence,
