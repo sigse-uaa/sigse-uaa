@@ -1,12 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sigse/app.dart';
+import 'package:sigse/core/storage/storage_keys.dart';
+import 'package:sigse/features/auth/presentation/login_page.dart';
+import 'package:sigse/features/auth/state/auth_provider.dart';
+import 'package:sigse/features/shell/presentation/app_shell.dart';
+
+import 'support/fakes.dart';
 
 void main() {
-  testWidgets('la app muestra el nombre SIGSE', (tester) async {
-    await tester.pumpWidget(const SigseApp());
+  testWidgets('sin sesión muestra el login', (tester) async {
+    final storage = await fakeStorage();
+    final api = fakeApi((_) async => jsonResponse(statsBody()));
 
-    expect(find.text('SIGSE'), findsWidgets);
-    expect(find.byIcon(Icons.signpost_outlined), findsOneWidget);
+    await tester.pumpWidget(SigseApp(storage: storage, apiClient: api));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.text('SIGSE'), findsOneWidget);
+  });
+
+  testWidgets('con sesión guardada entra directo y muestra los conteos', (
+    tester,
+  ) async {
+    final storage = await fakeStorage(savedSession());
+    final api = fakeApi((_) async => jsonResponse(statsBody(total: 4)));
+
+    await tester.pumpWidget(SigseApp(storage: storage, apiClient: api));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(find.text('Hola, Usuario Demo'), findsOneWidget);
+    expect(find.text('Total'), findsOneWidget);
+    // El usuario general no ve "Asignadas a mí": es solo del operador.
+    expect(find.text('Asignadas a mí'), findsNothing);
+  });
+
+  testWidgets('token vencido regresa al login con mensaje', (tester) async {
+    final storage = await fakeStorage(savedSession());
+    final api = fakeApi(
+      (_) async => errorResponse(
+        401,
+        'INVALID_TOKEN',
+        'Tu sesión expiró o no es válida.',
+      ),
+    );
+
+    await tester.pumpWidget(SigseApp(storage: storage, apiClient: api));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.text(AuthProvider.sessionExpiredMessage), findsOneWidget);
+    expect(storage.readString(StorageKeys.token), isNull);
+  });
+
+  testWidgets('iniciar y cerrar sesión', (tester) async {
+    final storage = await fakeStorage();
+    final api = fakeApi((request) async {
+      if (request.url.path.endsWith('/auth/login')) {
+        return jsonResponse({'token': 'jwt', 'user': demoOperator.toJson()});
+      }
+      return jsonResponse(statsBody(total: 2, pendingAssignedToMe: 1));
+    });
+
+    await tester.pumpWidget(SigseApp(storage: storage, apiClient: api));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Correo'),
+      'operador1@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Contraseña'),
+      'SigseDemo2026!',
+    );
+    await tester.tap(find.text('Iniciar sesión'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(find.text('Asignadas a mí'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Cerrar sesión'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
+    expect(storage.readString(StorageKeys.token), isNull);
   });
 }

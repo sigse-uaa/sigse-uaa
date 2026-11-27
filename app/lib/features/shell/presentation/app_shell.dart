@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/widgets/empty_state.dart';
+import '../../auth/state/auth_provider.dart';
 import '../../home/presentation/home_page.dart';
 
 class AppShell extends StatefulWidget {
@@ -37,7 +39,16 @@ class _AppShellState extends State<AppShell> {
     final body = _buildPage(_selectedIndex);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('SIGSE')),
+      appBar: AppBar(
+        title: const Text('SIGSE'),
+        actions: [
+          IconButton(
+            tooltip: 'Cerrar sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<AuthProvider>().logout(),
+          ),
+        ],
+      ),
       body: isWide
           ? Row(
               children: [
