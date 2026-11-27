@@ -1,3 +1,5 @@
+const { serializeUser } = require('../serializers');
+
 function createAuthController(authService) {
   return {
     async register(request, response) {
@@ -8,6 +10,9 @@ function createAuthController(authService) {
     async login(request, response) {
       const session = await authService.login(request.body);
       response.json(session);
+    },
+    async me(request, response) {
+      response.json({ user: serializeUser(request.user) });
     },
   };
 }

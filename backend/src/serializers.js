@@ -10,6 +10,17 @@ function serializeUser(row) {
   };
 }
 
+function serializeCategory(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    description: row.description,
+    color: row.color,
+    icon: row.icon,
+    isActive: Boolean(row.is_active),
+  };
+}
+
 function serializePerson(id, name) {
   return { id: Number(id), name };
 }
@@ -80,6 +91,7 @@ function serializeHistory(row) {
 
 module.exports = {
   serializeUser,
+  serializeCategory,
   serializeInspection,
   serializeInspectionDetail,
   serializeEvidence,

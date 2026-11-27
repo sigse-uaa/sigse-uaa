@@ -51,7 +51,6 @@ function createAuthService({ users, jwtSecret, jwtExpiresIn }) {
       } catch {
         throw new ApiError(401, 'INVALID_TOKEN', 'Tu sesión expiró o no es válida.');
       }
-
       const user = await users.findById(payload.sub);
       if (!user) {
         throw new ApiError(401, 'INVALID_TOKEN', 'Tu sesión expiró o no es válida.');
