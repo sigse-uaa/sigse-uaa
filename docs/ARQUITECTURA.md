@@ -77,7 +77,9 @@ código (`features/home/presentation/home_page.dart`); seguirla en todos los mó
 
 ### 2.3 Navegación
 
-- `AuthGate`: si no hay sesión → Login; si hay → Shell principal.
+- `_AuthGate` (en `app.dart`): mientras se restaura la sesión → carga; sin sesión → Login; con
+  sesión → Shell principal. Al entrar o salir de la sesión se cierran las pantallas apiladas
+  encima (registro, detalle…), así que ninguna ruta protegida queda visible sin sesión.
 - Shell responsivo:
   - Ancho < 720 px: `NavigationBar` inferior.
   - Ancho ≥ 720 px: `NavigationRail` lateral.
@@ -95,7 +97,11 @@ código (`features/home/presentation/home_page.dart`); seguirla en todos los mó
   `http://localhost:3000/api`.
 - Traducción de errores a `ApiException` con mensaje amigable.
 - Detección de `401` para cerrar sesión y volver al login. `ApiClient` solo lanza
-  `ApiException` con `statusCode`; quien decide cerrar sesión es `AuthProvider` (tarea E3).
+  `ApiException` con `statusCode`; quien decide cerrar sesión es `AuthProvider`. Cada provider o
+  pantalla que atrape una `ApiException` se la pasa a
+  `context.read<AuthProvider>().handleApiError(error)`: con `401` o `403 USER_INACTIVE` cierra
+  la sesión y la app vuelve sola al login; con cualquier otro error no hace nada y la pantalla
+  muestra el suyo.
 - `SocketException`/`TimeoutException`/`ClientException` → mensaje “sin conexión”.
 
 Formato de error del backend:
@@ -107,7 +113,8 @@ Formato de error del backend:
 ### 2.5 Persistencia local y offline
 
 - `LocalStorage` (envoltura de `shared_preferences`, **ya implementada** en `core/storage/`) y,
-  sobre ella, `SessionStore` (**pendiente, se crea en la tarea E3** junto con la auth UI).
+  sobre ella, `SessionStore` (`features/auth/data/session_store.dart`), que guarda token y
+  usuario y, al cerrar sesión, borra también la caché de ese usuario.
   Las claves están en `StorageKeys` (`core/storage/storage_keys.dart`); no escribir claves a mano:
   - `auth_token`, `auth_user`, `theme_mode`.
   - `inspections_cache_<userId>` (`StorageKeys.inspectionsCache(id)`): últimos resultados JSON.
