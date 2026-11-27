@@ -2,7 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { ApiError } = require('../errors');
 const { serializeUser } = require('../serializers');
-const {serializeUserPorfile}=require('../serializers');
 
 // Mismo coste que los hashes de database/seed.sql: con otro, el tiempo de login
 // delataría si el correo existe.
@@ -43,7 +42,6 @@ function createAuthService({ users, jwtSecret, jwtExpiresIn }) {
       }
       return { token: signToken(user), user: serializeUser(user) };
     },
-    
 
     /** Devuelve el usuario activo dueño del token o lanza 401/403. */
     async authenticateToken(token) {
@@ -58,14 +56,10 @@ function createAuthService({ users, jwtSecret, jwtExpiresIn }) {
         throw new ApiError(401, 'INVALID_TOKEN', 'Tu sesión expiró o no es válida.');
       }
       if (!user.is_active) {
-        throw new ApiError(403, 'USER_INACTIVE', 'Tu cuenta está desactivada.');//ya revisa si es activa o no no se para que quieren 
+        throw new ApiError(403, 'USER_INACTIVE', 'Tu cuenta está desactivada.');
       }
       return serializeUser(user);
     },
-
-    
-
-
   };
 }
 

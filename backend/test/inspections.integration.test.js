@@ -102,7 +102,7 @@ test('identidad y categorías con MySQL', {
   skip: !MYSQL_PORT && 'Configura TEST_MYSQL_PORT para ejecutar contra MySQL 8.4.',
   timeout: 90_000,
 }, async (t) => {
-  const { url } = await startApi(t);
+  const { url, pool } = await startApi(t);
   const operator = await login(url, 'operador1@example.com');
   const owner = await login(url, 'usuario@example.com');
   const api = (session, path, method = 'GET', json) => request(url, session?.token, '/api' + path, { method, json });
@@ -111,7 +111,14 @@ test('identidad y categorías con MySQL', {
     await expectJson(await api(null, '/auth/me'), 401, 'MISSING_TOKEN');
     const profile = await expectJson(await api(owner, '/auth/me'), 200);
     assert.deepEqual(await expectJson(await api(owner, '/users/me'), 200), profile);
-    assert.equal(profile.user.isActive, true);
+    assert.deepEqual(profile, { user: owner.user });
+    await expectJson(await api(owner, '/users/me', 'PATCH', {
+      currentPassword: 'é'.repeat(37), newPassword: 'Nueva123!',
+    }), 422, 'VALIDATION_ERROR').then((body) => {
+      assert.equal(body.error.details[0].path, 'currentPassword');
+    });
+    const users = createUsersRepository(pool);
+    const original = await users.findById(owner.user.id);
     await expectJson(await api(owner, '/users/me', 'PATCH', { newPassword: 'Nueva123!' }), 422, 'VALIDATION_ERROR');
     await expectJson(await api(owner, '/users/me', 'PATCH', {
       name: 'Nombre fallido', currentPassword: 'Incorrecta123!', newPassword: 'Nueva123!',
@@ -120,7 +127,14 @@ test('identidad y categorías con MySQL', {
     const updated = await expectJson(await api(owner, '/users/me', 'PATCH', {
       name: 'Nombre actualizado', currentPassword: SEED_PASSWORD, newPassword: 'Nueva123!',
     }), 200);
-    assert.equal(updated.user.name, 'Nombre actualizado');
+    assert.deepEqual(updated, { user: { ...owner.user, name: 'Nombre actualizado' } });
+    const staleUpdate = await users.updateProfile(owner.user.id, {
+      name: 'Nombre obsoleto',
+      passwordHash: original.password_hash,
+      expectedPasswordHash: original.password_hash,
+    });
+    assert.equal(staleUpdate, null);
+    assert.deepEqual(await expectJson(await api(owner, '/users/me'), 200), updated);
     await expectJson(await api(null, '/auth/login', 'POST', {
       email: owner.user.email, password: 'Nueva123!',
     }), 200);

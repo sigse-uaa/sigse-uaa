@@ -9,15 +9,6 @@ function serializeUser(row) {
     role: row.role,
   };
 }
-function serializeUserPorfile(user, isActive_ = Boolean(user.is_active)) {
-  return{
-    id: Number(user.id),
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    isActive: isActive_
-  };
-}
 
 function serializeCategory(row) {
   return {
@@ -100,7 +91,6 @@ function serializeHistory(row) {
 
 module.exports = {
   serializeUser,
-  serializeUserPorfile,
   serializeCategory,
   serializeInspection,
   serializeInspectionDetail,

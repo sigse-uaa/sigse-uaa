@@ -34,17 +34,20 @@ function createUsersRepository(pool) {
       return rows;
     },
 
-      async updateProfile(id, { name = null, passwordHash = null }) {
-    await pool.query(
-      `UPDATE users
-      SET name = COALESCE(?, name),
-          password_hash = COALESCE(?, password_hash)
-      WHERE id = ?`,
-      [name, passwordHash, id],
-    );
-    return this.findById(id);
-  },
-  
+    async updateProfile(id, { name = null, passwordHash = null, expectedPasswordHash = null }) {
+      const [result] = await pool.query(
+        `UPDATE users
+         SET name = COALESCE(?, name),
+             password_hash = COALESCE(?, password_hash)
+         WHERE id = ? AND (? IS NULL OR CAST(password_hash AS BINARY) = ?)`,
+        [name, passwordHash, id, expectedPasswordHash, expectedPasswordHash],
+      );
+      if (expectedPasswordHash !== null && result.affectedRows === 0) {
+        return null;
+      }
+      return this.findById(id);
+    },
+
     async findByEmail(email) {
       const [rows] = await pool.query(
         'SELECT id, name, email, password_hash, role, is_active FROM users WHERE email = ? LIMIT 1',

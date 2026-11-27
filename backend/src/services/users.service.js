@@ -1,7 +1,6 @@
-
 const bcrypt = require('bcryptjs');
 const { ApiError } = require('../errors');
-const { serializeUser, serializeUserPorfile } = require('../serializers');
+const { serializeUser } = require('../serializers');
 
 const BCRYPT_ROUNDS = 12;
 
@@ -22,29 +21,25 @@ function createUsersService(users) {
     },
 
     async updateProfile(userId, { name, currentPassword, newPassword }) {
-        const changes = {};
+      const changes = { name };
 
-        if (name !== undefined) {
-            changes.name = name;
-        }
-
-    if (newPassword !== undefined) {
+      if (newPassword !== undefined) {
         const user = await users.findById(userId);
-        const passwordMatches =
-        user && await bcrypt.compare(currentPassword, user.password_hash);
-
-        if (!passwordMatches) {
-            throw new ApiError(422, 'VALIDATION_ERROR', 'La contraseña actual es incorrecta.');
+        if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+          throw new ApiError(422, 'VALIDATION_ERROR', 'La contraseña actual es incorrecta.');
         }
 
+        changes.expectedPasswordHash = user.password_hash;
         changes.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-        }
+      }
 
-        const updatedUser = await users.updateProfile(userId, changes);
-
-        return serializeUserPorfile(updatedUser);
-        },
-    };
+      const updatedUser = await users.updateProfile(userId, changes);
+      if (!updatedUser) {
+        throw new ApiError(409, 'PROFILE_UPDATE_CONFLICT', 'El perfil cambió durante la actualización. Vuelve a intentarlo.');
+      }
+      return serializeUser(updatedUser);
+    },
+  };
 }
 
 module.exports = { createUsersService };
