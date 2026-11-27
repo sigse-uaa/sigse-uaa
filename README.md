@@ -135,6 +135,8 @@ En debug/profile Android se permite HTTP local; en release usa HTTPS.
 Edson mantiene `app/lib/core/`. Diana y Alonso pueden consumirla desde sus módulos:
 
 - `ApiClient`: GET/POST/PATCH/DELETE, token Bearer, timeout, JSON y `multipart/form-data`.
+  Para las fotos de evidencia, `downloadFile(filePath)` devuelve los bytes (con el token) y
+  `origin` da el servidor sin `/api`.
 - `ApiException`: mensajes amigables y lectura del formato de error del contrato.
 - `LocalStorage`: lectura/escritura JSON con `shared_preferences`.
 - `AppConfig`, `AppRoutes` y `User`: configuración, rutas y modelo base.
@@ -151,6 +153,10 @@ api.setToken(response['token'] as String);
 final user = User.fromJson(response['user'] as Map<String, dynamic>);
 final storage = await LocalStorage.create();
 await storage.writeJson(StorageKeys.user, user.toJson());
+
+// Mostrar una foto de evidencia: filePath viene de la API ("/uploads/<uuid>.jpg").
+final bytes = await api.downloadFile(evidence.filePath);
+final image = Image.memory(bytes, fit: BoxFit.cover);
 ```
 
 Los cambios en `core/` entran por PR. La convención de carpetas de cada módulo está en

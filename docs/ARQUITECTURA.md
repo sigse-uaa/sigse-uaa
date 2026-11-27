@@ -91,6 +91,7 @@ código (`features/home/presentation/home_page.dart`); seguirla en todos los mó
 - URL base desde `--dart-define=API_BASE_URL`.
 - Inyección del token `Bearer`.
 - Timeout (20 s), parseo JSON y `multipart/form-data`.
+- Descarga de evidencias con `downloadFile(filePath)` (ver abajo).
 - En emulador Android la URL local es `http://10.0.2.2:3000/api`; en web/escritorio es
   `http://localhost:3000/api`.
 - Traducción de errores a `ApiException` con mensaje amigable.
@@ -102,6 +103,34 @@ Formato de error del backend:
 
 ```json
 { "error": { "message": "Texto para el usuario", "code": "VALIDATION_ERROR", "details": [] } }
+```
+
+**Fotos de evidencia.** La API devuelve `filePath` relativo (`/uploads/<uuid>.jpg`), servido
+**fuera de `/api`** y solo con token. `ApiClient.downloadFile(filePath)` lo pega a
+`ApiClient.origin` (la URL base sin `/api`), manda el token y devuelve los bytes; los errores
+(`401`, `403`, `404 EVIDENCE_NOT_FOUND`, sin red, timeout) llegan como `ApiException`. Las
+pantallas muestran los bytes con `Image.memory`, no con `Image.network`, que no manda el token
+y en web no siempre respeta encabezados. Así funciona igual en Android, web y Linux.
+
+```dart
+// En el State de la pantalla: pedir la foto una vez, no en cada build().
+late final Future<Uint8List> _photo;
+
+@override
+void initState() {
+  super.initState();
+  _photo = context.read<ApiClient>().downloadFile(widget.evidence.filePath);
+}
+
+// En build():
+FutureBuilder<Uint8List>(
+  future: _photo,
+  builder: (context, snapshot) {
+    if (snapshot.hasError) return const Icon(Icons.broken_image_outlined);
+    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+    return Image.memory(snapshot.data!, fit: BoxFit.cover);
+  },
+)
 ```
 
 ### 2.5 Persistencia local y offline
