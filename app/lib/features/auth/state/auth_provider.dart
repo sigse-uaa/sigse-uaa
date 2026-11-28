@@ -27,6 +27,7 @@ class AuthProvider extends ChangeNotifier {
   bool _restoring = true;
   User? _user;
   ApiException? _error;
+  int _sessionId = 0;
 
   AuthStatus get status => _status;
   User? get user => _user;
@@ -37,6 +38,11 @@ class AuthProvider extends ChangeNotifier {
   bool get isRestoring => _restoring;
 
   String? get errorMessage => _error?.message;
+
+  /// Cambia al iniciar y al cerrar cada sesión. Quien hace una petición lo lee
+  /// **antes** del `await` y lo pasa a [handleApiError]: así un error que llega
+  /// tarde, de una sesión anterior, no cierra la sesión actual.
+  int get sessionId => _sessionId;
 
   /// Errores por campo para mostrarlos junto a cada `TextFormField`.
   Map<String, String> get fieldErrors {
@@ -106,14 +112,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Las demás pantallas le pasan aquí sus errores de la API. Si el token ya no
+  /// Las demás pantallas le pasan aquí sus errores de la API, junto con el
+  /// [sessionId] que leyeron antes de hacer la petición. Si el token ya no
   /// sirve (`401`) o la cuenta fue desactivada (`403 USER_INACTIVE`), cierra la
   /// sesión y la app regresa al login. Devuelve `true` si cerró la sesión.
-  Future<bool> handleApiError(ApiException error) async {
+  Future<bool> handleApiError(
+    ApiException error, {
+    required int sessionId,
+  }) async {
     final sessionLost =
         error.isUnauthorized ||
         (error.isForbidden && error.code == 'USER_INACTIVE');
-    if (!sessionLost || !isAuthenticated) {
+    // Una respuesta de otra sesión (ya cerrada) no dice nada de la actual.
+    if (!sessionLost || !isAuthenticated || sessionId != _sessionId) {
       return false;
     }
     await _endSession(
@@ -146,6 +157,7 @@ class AuthProvider extends ChangeNotifier {
       final session = await request();
       await _sessionStore.save(session.token, session.user);
       _apiClient.setToken(session.token);
+      _sessionId++;
       _user = session.user;
       _status = AuthStatus.authenticated;
       notifyListeners();
@@ -160,6 +172,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _endSession({ApiException? reason}) async {
+    // Antes de cualquier await: otro error de esta misma sesión que llegue
+    // mientras tanto ya no la vuelve a cerrar.
+    _sessionId++;
     // Primero se borra lo guardado: si la app se cierra a la mitad, no debe
     // quedar una sesión que se restaure sola al volver a abrirla.
     await _sessionStore.clear(userId: _user?.id);

@@ -249,6 +249,7 @@ void main() {
           statusCode: 401,
           code: 'INVALID_TOKEN',
         ),
+        sessionId: auth.sessionId,
       );
 
       expect(closed, isTrue);
@@ -267,6 +268,7 @@ void main() {
           statusCode: 403,
           code: 'USER_INACTIVE',
         ),
+        sessionId: auth.sessionId,
       );
 
       expect(closed, isTrue);
@@ -283,11 +285,55 @@ void main() {
           statusCode: 403,
           code: 'FORBIDDEN',
         ),
+        sessionId: auth.sessionId,
       );
 
       expect(closed, isFalse);
       expect(auth.isAuthenticated, isTrue);
     });
+
+    test('un 401 de una sesión anterior no cierra la actual', () async {
+      await setUpAuth(loginOk, saved: savedSession());
+      await auth.restoreSession();
+      final oldSession = auth.sessionId;
+
+      await auth.logout();
+      await auth.login('usuario@example.com', 'SigseDemo2026!');
+      final closed = await auth.handleApiError(
+        const ApiException(
+          message: 'Tu sesión expiró o no es válida.',
+          statusCode: 401,
+          code: 'INVALID_TOKEN',
+        ),
+        sessionId: oldSession,
+      );
+
+      expect(closed, isFalse);
+      expect(auth.isAuthenticated, isTrue);
+      expect(storage.readString(StorageKeys.token), 'jwt-nuevo');
+    });
+
+    test(
+      'dos 401 seguidos de la misma sesión la cierran una sola vez',
+      () async {
+        await setUpAuth(loginOk, saved: savedSession());
+        await auth.restoreSession();
+        final session = auth.sessionId;
+        const expired = ApiException(
+          message: 'Tu sesión expiró o no es válida.',
+          statusCode: 401,
+          code: 'INVALID_TOKEN',
+        );
+
+        final results = await Future.wait([
+          auth.handleApiError(expired, sessionId: session),
+          auth.handleApiError(expired, sessionId: session),
+        ]);
+
+        expect(results, [isTrue, isFalse]);
+        expect(auth.isAuthenticated, isFalse);
+      },
+    );
 
     test('USER_INACTIVE solo cierra la sesión si viene con 403', () async {
       await setUpAuth(loginOk, saved: savedSession());
@@ -299,6 +345,7 @@ void main() {
           statusCode: 500,
           code: 'USER_INACTIVE',
         ),
+        sessionId: auth.sessionId,
       );
 
       expect(closed, isFalse);

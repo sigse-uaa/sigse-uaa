@@ -43,11 +43,12 @@ class _HomePageState extends State<HomePage> {
     // Se leen antes del await: después el widget podría ya no existir.
     final repository = context.read<StatsRepository>();
     final auth = context.read<AuthProvider>();
+    final sessionId = auth.sessionId;
     try {
       return await repository.fetchSummary();
     } on ApiException catch (error) {
       // Un 401 cierra la sesión y la app regresa sola al login.
-      await auth.handleApiError(error);
+      await auth.handleApiError(error, sessionId: sessionId);
       rethrow;
     }
   }
