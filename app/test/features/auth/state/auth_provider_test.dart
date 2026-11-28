@@ -123,6 +123,25 @@ void main() {
       expect(auth.errorMessage, 'Tu cuenta está desactivada.');
     });
 
+    test(
+      'un error inesperado no deja el login cargando para siempre',
+      () async {
+        // 200 con bytes que no son UTF-8: ApiClient lanza FormatException.
+        await setUpAuth(
+          (_) async => http.Response.bytes([0xFF, 0xFE, 0xFD], 200),
+        );
+        await auth.restoreSession();
+
+        final ok = await auth.login('usuario@example.com', 'SigseDemo2026!');
+
+        expect(ok, isFalse);
+        expect(auth.isLoading, isFalse);
+        expect(auth.status, AuthStatus.error);
+        expect(auth.errorMessage, AuthProvider.unexpectedErrorMessage);
+        expect(storage.readString(StorageKeys.token), isNull);
+      },
+    );
+
     test('clearError regresa a sin autenticar', () async {
       await setUpAuth(
         (_) async => errorResponse(401, 'INVALID_CREDENTIALS', 'Incorrecto.'),

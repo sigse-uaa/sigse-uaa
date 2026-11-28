@@ -19,6 +19,9 @@ class AuthProvider extends ChangeNotifier {
   static const sessionExpiredMessage =
       'Tu sesión expiró. Inicia sesión de nuevo.';
 
+  static const unexpectedErrorMessage =
+      'Ocurrió un error inesperado. Intenta de nuevo.';
+
   final AuthRepository _repository;
   final SessionStore _sessionStore;
   final ApiClient _apiClient;
@@ -165,6 +168,16 @@ class AuthProvider extends ChangeNotifier {
     } on ApiException catch (error) {
       // Aquí un 401 es INVALID_CREDENTIALS, no una sesión vencida.
       _error = error;
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    } catch (error, stack) {
+      // Cualquier otro fallo (respuesta corrupta, disco): no dejar el botón
+      // cargando para siempre. Se reporta para que siga viéndose en los logs.
+      FlutterError.reportError(
+        FlutterErrorDetails(exception: error, stack: stack, library: 'auth'),
+      );
+      _error = const ApiException(message: unexpectedErrorMessage);
       _status = AuthStatus.error;
       notifyListeners();
       return false;
