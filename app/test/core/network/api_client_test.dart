@@ -150,6 +150,27 @@ void main() {
       );
     }
 
+    test('no sigue redirecciones: el token no sale del servidor', () async {
+      late http.Request captured;
+      var calls = 0;
+      final api = apiWith((request) async {
+        calls++;
+        captured = request;
+        return http.Response(
+          '',
+          302,
+          headers: <String, String>{'location': 'https://otro.example.com/x'},
+        );
+      })..setToken('token-demo');
+
+      await expectLater(
+        api.downloadFile('/uploads/foto.jpg'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 302)),
+      );
+      expect(captured.followRedirects, isFalse);
+      expect(calls, 1);
+    });
+
     test(
       'descarga desde el origen con el token y devuelve los bytes',
       () async {

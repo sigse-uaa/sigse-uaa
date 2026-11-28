@@ -74,15 +74,19 @@ class ApiClient {
   /// API (`/uploads/<archivo>`) y devuelve sus bytes, para mostrarlos con
   /// `Image.memory`. No se usa `Image.network`: no manda el token por sí solo
   /// y en web no siempre respeta los encabezados.
+  ///
+  /// No sigue redirecciones: el token solo viaja al servidor de la API (que
+  /// sirve el archivo directo). Una redirección llega como `ApiException`.
   Future<Uint8List> downloadFile(String filePath) async {
+    final request = http.Request('GET', _fileUri(filePath))
+      ..headers.addAll(_headers(includeContentType: false, accept: '*/*'))
+      ..followRedirects = false;
     late http.Response response;
 
     try {
       response = await _client
-          .get(
-            _fileUri(filePath),
-            headers: _headers(includeContentType: false, accept: '*/*'),
-          )
+          .send(request)
+          .then(http.Response.fromStream)
           .timeout(timeout);
     } on TimeoutException {
       throw ApiException.timeout();
