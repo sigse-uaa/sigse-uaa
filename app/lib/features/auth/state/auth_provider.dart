@@ -51,11 +51,17 @@ class AuthProvider extends ChangeNotifier {
     if (details is! List) {
       return const {};
     }
-    return {
-      for (final item in details.whereType<Map>())
-        if (item['path'] is String && item['message'] is String)
-          item['path'] as String: item['message'] as String,
-    };
+    // Zod puede mandar varios errores del mismo campo; se muestra el primero,
+    // que es el mismo que daría la validación de la app.
+    final errors = <String, String>{};
+    for (final item in details.whereType<Map>()) {
+      final path = item['path'];
+      final message = item['message'];
+      if (path is String && message is String) {
+        errors.putIfAbsent(path, () => message);
+      }
+    }
+    return errors;
   }
 
   Future<void> restoreSession() async {
@@ -104,7 +110,9 @@ class AuthProvider extends ChangeNotifier {
   /// sirve (`401`) o la cuenta fue desactivada (`403 USER_INACTIVE`), cierra la
   /// sesión y la app regresa al login. Devuelve `true` si cerró la sesión.
   Future<bool> handleApiError(ApiException error) async {
-    final sessionLost = error.isUnauthorized || error.code == 'USER_INACTIVE';
+    final sessionLost =
+        error.isUnauthorized ||
+        (error.isForbidden && error.code == 'USER_INACTIVE');
     if (!sessionLost || !isAuthenticated) {
       return false;
     }

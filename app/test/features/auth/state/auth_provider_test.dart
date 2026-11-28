@@ -182,6 +182,33 @@ void main() {
         'password': 'La contraseña debe incluir al menos un número',
       });
     });
+
+    test('con varios errores del mismo campo muestra el primero', () async {
+      await setUpAuth(
+        (_) async => errorResponse(
+          422,
+          'VALIDATION_ERROR',
+          'Revisa los datos enviados.',
+          details: [
+            {
+              'path': 'password',
+              'message': 'La contraseña debe tener al menos 8 caracteres',
+            },
+            {
+              'path': 'password',
+              'message': 'La contraseña debe incluir al menos un número',
+            },
+          ],
+        ),
+      );
+      await auth.restoreSession();
+
+      await auth.register('Ana López', 'ana@uaa.mx', 'abc');
+
+      expect(auth.fieldErrors, {
+        'password': 'La contraseña debe tener al menos 8 caracteres',
+      });
+    });
   });
 
   group('cierre de sesión', () {
@@ -255,6 +282,22 @@ void main() {
           message: 'Sin permiso',
           statusCode: 403,
           code: 'FORBIDDEN',
+        ),
+      );
+
+      expect(closed, isFalse);
+      expect(auth.isAuthenticated, isTrue);
+    });
+
+    test('USER_INACTIVE solo cierra la sesión si viene con 403', () async {
+      await setUpAuth(loginOk, saved: savedSession());
+      await auth.restoreSession();
+
+      final closed = await auth.handleApiError(
+        const ApiException(
+          message: 'Respuesta inesperada',
+          statusCode: 500,
+          code: 'USER_INACTIVE',
         ),
       );
 

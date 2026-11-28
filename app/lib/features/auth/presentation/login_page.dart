@@ -39,6 +39,15 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  /// Igual que en el registro: al editar un campo que el servidor marcó (422),
+  /// se quita su mensaje para que vuelva a validar la app.
+  void _clearServerError(String field) {
+    final auth = context.read<AuthProvider>();
+    if (auth.fieldErrors.containsKey(field)) {
+      auth.clearError();
+    }
+  }
+
   Future<void> _openRegister() async {
     final auth = context.read<AuthProvider>()..clearError();
     await Navigator.of(context).pushNamed(AppRoutes.register);
@@ -50,6 +59,9 @@ class _LoginPageState extends State<LoginPage> {
     final theme = Theme.of(context);
     final auth = context.watch<AuthProvider>();
     final loading = auth.isLoading;
+    final fieldErrors = auth.fieldErrors;
+    // Si el error ya se muestra junto a un campo, no se repite abajo.
+    final generalError = fieldErrors.isEmpty ? auth.errorMessage : null;
 
     return Scaffold(
       body: SafeArea(
@@ -87,6 +99,8 @@ class _LoginPageState extends State<LoginPage> {
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.email],
                         textInputAction: TextInputAction.next,
+                        onChanged: (_) => _clearServerError('email'),
+                        forceErrorText: fieldErrors['email'],
                         decoration: const InputDecoration(
                           labelText: 'Correo',
                           prefixIcon: Icon(Icons.mail_outline),
@@ -99,7 +113,9 @@ class _LoginPageState extends State<LoginPage> {
                         obscureText: _obscurePassword,
                         autofillHints: const [AutofillHints.password],
                         textInputAction: TextInputAction.done,
+                        onChanged: (_) => _clearServerError('password'),
                         onFieldSubmitted: (_) => _submit(),
+                        forceErrorText: fieldErrors['password'],
                         decoration: InputDecoration(
                           labelText: 'Contraseña',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -119,9 +135,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: AuthValidators.loginPassword,
                       ),
-                      if (auth.errorMessage != null) ...[
+                      if (generalError != null) ...[
                         const SizedBox(height: 16),
-                        AuthErrorBanner(message: auth.errorMessage!),
+                        AuthErrorBanner(message: generalError),
                       ],
                       const SizedBox(height: 24),
                       FilledButton(
