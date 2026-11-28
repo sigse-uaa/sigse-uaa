@@ -98,10 +98,11 @@ código (`features/home/presentation/home_page.dart`); seguirla en todos los mó
 - Traducción de errores a `ApiException` con mensaje amigable.
 - Detección de `401` para cerrar sesión y volver al login. `ApiClient` solo lanza
   `ApiException` con `statusCode`; quien decide cerrar sesión es `AuthProvider`. Cada provider o
-  pantalla que atrape una `ApiException` se la pasa a
-  `context.read<AuthProvider>().handleApiError(error)`: con `401` o `403 USER_INACTIVE` cierra
-  la sesión y la app vuelve sola al login; con cualquier otro error no hace nada y la pantalla
-  muestra el suyo.
+  pantalla lee `auth.sessionId` **antes** de hacer la petición y, si atrapa una `ApiException`,
+  llama `auth.handleApiError(error, sessionId: sessionId)`: con `401` o `403 USER_INACTIVE`
+  cierra la sesión y la app vuelve sola al login; con cualquier otro error no hace nada y la
+  pantalla muestra el suyo. El `sessionId` evita que la respuesta tardía de una sesión ya
+  cerrada cierre la sesión nueva (ejemplo en `features/home/presentation/home_page.dart`).
 - `SocketException`/`TimeoutException`/`ClientException` → mensaje “sin conexión”.
 
 Formato de error del backend:
