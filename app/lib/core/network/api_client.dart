@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -18,6 +19,10 @@ class ApiClient {
   String? _token;
 
   String? get token => _token;
+
+  /// Servidor sin la ruta `/api` (`http://localhost:3000`, `https://dominio`).
+  /// Las evidencias se sirven desde ahí: `GET /uploads/<archivo>`.
+  String get origin => Uri.parse(baseUrl).origin;
 
   void setToken(String? token) {
     final value = token?.trim();
@@ -65,6 +70,36 @@ class ApiClient {
     }
   }
 
+  /// Descarga un archivo de evidencia a partir del `filePath` que devuelve la
+  /// API (`/uploads/<archivo>`) y devuelve sus bytes, para mostrarlos con
+  /// `Image.memory`. No se usa `Image.network`: no manda el token por sí solo
+  /// y en web no siempre respeta los encabezados.
+  ///
+  /// No sigue redirecciones: el token solo viaja al servidor de la API (que
+  /// sirve el archivo directo). Una redirección llega como `ApiException`.
+  Future<Uint8List> downloadFile(String filePath) async {
+    final request = http.Request('GET', _fileUri(filePath))
+      ..headers.addAll(_headers(includeContentType: false, accept: '*/*'))
+      ..followRedirects = false;
+    late http.Response response;
+
+    try {
+      response = await _client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(timeout);
+    } on TimeoutException {
+      throw ApiException.timeout();
+    } on http.ClientException catch (error) {
+      throw ApiException.network(error.message);
+    }
+
+    if (!_isSuccess(response.statusCode)) {
+      throw _errorFrom(response);
+    }
+    return response.bodyBytes;
+  }
+
   Future<Map<String, dynamic>> _sendJson(
     String method,
     String path, {
@@ -100,35 +135,54 @@ class ApiClient {
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
+    if (!_isSuccess(response.statusCode)) {
+      throw _errorFrom(response);
+    }
+
     final rawBody = utf8.decode(response.bodyBytes);
+    if (rawBody.trim().isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(rawBody);
+    } on FormatException {
+      throw ApiException.invalidResponse();
+    }
+
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    return <String, dynamic>{'data': decoded};
+  }
+
+  static bool _isSuccess(int statusCode) =>
+      statusCode >= 200 && statusCode < 300;
+
+  /// Convierte una respuesta de error en `ApiException`. Si el cuerpo no es
+  /// JSON (un proxy, por ejemplo), se usa el mensaje genérico del código.
+  ApiException _errorFrom(http.Response response) {
+    final rawBody = utf8.decode(response.bodyBytes, allowMalformed: true);
     Object? decoded;
 
     if (rawBody.trim().isNotEmpty) {
       try {
         decoded = jsonDecode(rawBody);
       } on FormatException {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          throw ApiException.invalidResponse();
-        }
+        decoded = null;
       }
     }
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (decoded == null) {
-        return <String, dynamic>{};
-      }
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
-      }
-      return <String, dynamic>{'data': decoded};
-    }
-
-    throw ApiException.fromResponse(response.statusCode, decoded);
+    return ApiException.fromResponse(response.statusCode, decoded);
   }
 
-  Map<String, String> _headers({bool includeContentType = true}) {
+  Map<String, String> _headers({
+    bool includeContentType = true,
+    String accept = 'application/json',
+  }) {
     return <String, String>{
-      'Accept': 'application/json',
+      'Accept': accept,
       if (includeContentType) 'Content-Type': 'application/json; charset=utf-8',
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
@@ -150,6 +204,18 @@ class ApiClient {
     return uri.replace(
       queryParameters: <String, String>{...uri.queryParameters, ...query},
     );
+  }
+
+  /// `filePath` se pega a [origin], nunca a [baseUrl] (que termina en `/api`).
+  /// Se quitan las barras iniciales para no producir `//uploads/...`. Como
+  /// siempre se pega al origen, ninguna ruta puede apuntar a otro servidor y
+  /// el token no sale de la API.
+  Uri _fileUri(String filePath) {
+    final path = filePath.trim().replaceFirst(RegExp(r'^/+'), '');
+    if (path.isEmpty) {
+      throw ArgumentError.value(filePath, 'filePath', 'Ruta de archivo vacía');
+    }
+    return Uri.parse('$origin/$path');
   }
 
   static String _normalizeBaseUrl(String value) {
