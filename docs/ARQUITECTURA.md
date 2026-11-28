@@ -108,7 +108,9 @@ Formato de error del backend:
 **Fotos de evidencia.** La API devuelve `filePath` relativo (`/uploads/<uuid>.jpg`), servido
 **fuera de `/api`** y solo con token. `ApiClient.downloadFile(filePath)` lo pega a
 `ApiClient.origin` (la URL base sin `/api`), manda el token y devuelve los bytes; los errores
-(`401`, `403`, `404 EVIDENCE_NOT_FOUND`, sin red, timeout) llegan como `ApiException`. Las
+(`401`, `403`, `404 EVIDENCE_NOT_FOUND`, sin red, timeout) llegan como `ApiException`. No sigue
+redirecciones, para que el token solo viaje al servidor de la API (que sirve el archivo
+directo); una redirección también llega como `ApiException`. Las
 pantallas muestran los bytes con `Image.memory`, no con `Image.network`, que no manda el token
 y en web no siempre respeta encabezados. Así funciona igual en Android, web y Linux.
 
