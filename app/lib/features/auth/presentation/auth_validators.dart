@@ -2,10 +2,19 @@ import 'dart:convert';
 
 /// Las mismas reglas y mensajes que `backend/src/validators/auth.validators.js`,
 /// para avisar sin esperar a la red. El backend sigue siendo quien decide.
+///
+/// Única diferencia: con el correo vacío la app dice "El correo es obligatorio"
+/// y el backend "Correo inválido"; un campo vacío nunca llega al servidor.
 abstract final class AuthValidators {
   static const maxPasswordBytes = 72;
 
-  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+  /// Copia de la expresión que usa `z.email()` en Zod 4
+  /// (`backend/node_modules/zod/v4/core/regexes.js`). Si se actualiza Zod,
+  /// revisar que siga igual.
+  static final _emailPattern = RegExp(
+    r"^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@"
+    r'(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$',
+  );
 
   static String? name(String? value) {
     final name = value?.trim() ?? '';

@@ -14,6 +14,37 @@ void main() {
     expect(AuthValidators.email(' ana@uaa.mx '), isNull);
   });
 
+  // Mismos resultados que el backend (Zod 4) con estos correos.
+  test('el correo se valida igual que en el backend', () {
+    const accepted = [
+      'usuario@example.com',
+      'a+b@ex.co',
+      "a'b@ex.com",
+      'a_b@sub.ex.mx',
+      'a@1ex.com',
+      'a@ex-.com',
+      '  A@EX.COM ',
+    ];
+    const rejected = [
+      'a@b.c',
+      'a..b@example.com',
+      '.a@ex.com',
+      'a.@ex.com',
+      'a@-ex.com',
+      'ñ@ex.com',
+      'a@ex.com.',
+      'a@ex..com',
+      'a@b@c.com',
+      'a@ex.c0m',
+    ];
+    for (final email in accepted) {
+      expect(AuthValidators.email(email), isNull, reason: email);
+    }
+    for (final email in rejected) {
+      expect(AuthValidators.email(email), 'Correo inválido', reason: email);
+    }
+  });
+
   test('contraseña nueva: mínimo 8, una letra y un número', () {
     expect(AuthValidators.newPassword('Ab1'), isNotNull);
     expect(AuthValidators.newPassword('12345678'), isNotNull);
