@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sigse/core/models/user.dart';
 import 'package:sigse/core/network/api_client.dart';
 import 'package:sigse/core/network/api_exception.dart';
@@ -13,6 +15,14 @@ import 'package:sigse/features/auth/data/session_store.dart';
 import 'package:sigse/features/auth/state/auth_provider.dart';
 
 import '../../../support/fakes.dart';
+
+/// Almacenamiento cuyo borrado falla (disco lleno, plataforma caída...).
+class _FailingRemoveStorage extends LocalStorage {
+  _FailingRemoveStorage(super.preferences);
+
+  @override
+  Future<void> remove(String key) => Future.error(Exception('disco'));
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,9 +36,13 @@ void main() {
   Future<void> setUpAuth(
     MockClientHandler handler, {
     Map<String, Object> saved = const {},
+    bool failingRemove = false,
   }) async {
     lastRequest = null;
     storage = await fakeStorage(saved);
+    if (failingRemove) {
+      storage = _FailingRemoveStorage(await SharedPreferences.getInstance());
+    }
     api = fakeApi((request) {
       lastRequest = request;
       return handler(request);
@@ -369,6 +383,81 @@ void main() {
 
       expect(closed, isFalse);
       expect(auth.isAuthenticated, isTrue);
+    });
+  });
+
+  group('si falla el almacenamiento local', () {
+    /// Atrapa lo que se reporta con FlutterError.reportError en la prueba.
+    List<FlutterErrorDetails> captureReportedErrors() {
+      final reported = <FlutterErrorDetails>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = reported.add;
+      addTearDown(() => FlutterError.onError = previous);
+      return reported;
+    }
+
+    test('logout cierra la sesión aunque no se pueda borrar', () async {
+      await setUpAuth(loginOk, saved: savedSession(), failingRemove: true);
+      await auth.restoreSession();
+      final reported = captureReportedErrors();
+
+      await auth.logout();
+
+      expect(auth.status, AuthStatus.unauthenticated);
+      expect(auth.user, isNull);
+      expect(api.token, isNull);
+      expect(reported, hasLength(1));
+    });
+
+    test('un 401 cierra la sesión aunque no se pueda borrar', () async {
+      await setUpAuth(loginOk, saved: savedSession(), failingRemove: true);
+      await auth.restoreSession();
+      captureReportedErrors();
+
+      final closed = await auth.handleApiError(
+        const ApiException(
+          message: 'Tu sesión expiró o no es válida.',
+          statusCode: 401,
+          code: 'INVALID_TOKEN',
+        ),
+        sessionId: auth.sessionId,
+      );
+
+      expect(closed, isTrue);
+      expect(auth.isAuthenticated, isFalse);
+      expect(api.token, isNull);
+    });
+
+    test('al abrir la app no se queda cargando', () async {
+      await setUpAuth(
+        loginOk,
+        saved: {StorageKeys.token: 'huerfano'},
+        failingRemove: true,
+      );
+      final reported = captureReportedErrors();
+
+      await auth.restoreSession();
+
+      expect(auth.isRestoring, isFalse);
+      expect(auth.status, AuthStatus.unauthenticated);
+      expect(reported, hasLength(1));
+    });
+
+    test('un usuario guardado ilegible no deja la app cargando', () async {
+      await setUpAuth(
+        loginOk,
+        saved: {
+          StorageKeys.token: 'jwt',
+          StorageKeys.user: '{"id":"3","name":"X"}',
+        },
+      );
+      captureReportedErrors();
+
+      await auth.restoreSession();
+
+      expect(auth.isRestoring, isFalse);
+      expect(auth.status, AuthStatus.unauthenticated);
+      expect(storage.readString(StorageKeys.token), isNull);
     });
   });
 

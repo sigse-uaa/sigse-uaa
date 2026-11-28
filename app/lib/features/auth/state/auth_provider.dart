@@ -74,8 +74,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> restoreSession() async {
-    final token = _sessionStore.readToken();
-    final user = _sessionStore.readUser();
+    String? token;
+    User? user;
+    try {
+      token = _sessionStore.readToken();
+      user = _sessionStore.readUser();
+    } catch (error, stack) {
+      // Datos guardados ilegibles: se tratan como si no hubiera sesión.
+      _reportError(error, stack);
+    }
 
     if (token != null && user != null) {
       _apiClient.setToken(token);
@@ -83,7 +90,7 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.authenticated;
     } else {
       // Si solo quedó una de las dos piezas, la sesión no sirve.
-      await _sessionStore.clear();
+      await _clearStoredSession();
       _status = AuthStatus.unauthenticated;
     }
     _restoring = false;
@@ -173,10 +180,8 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (error, stack) {
       // Cualquier otro fallo (respuesta corrupta, disco): no dejar el botón
-      // cargando para siempre. Se reporta para que siga viéndose en los logs.
-      FlutterError.reportError(
-        FlutterErrorDetails(exception: error, stack: stack, library: 'auth'),
-      );
+      // cargando para siempre.
+      _reportError(error, stack);
       _error = const ApiException(message: unexpectedErrorMessage);
       _status = AuthStatus.error;
       notifyListeners();
@@ -190,11 +195,29 @@ class AuthProvider extends ChangeNotifier {
     _sessionId++;
     // Primero se borra lo guardado: si la app se cierra a la mitad, no debe
     // quedar una sesión que se restaure sola al volver a abrirla.
-    await _sessionStore.clear(userId: _user?.id);
+    await _clearStoredSession(userId: _user?.id);
     _apiClient.setToken(null);
     _user = null;
     _error = reason;
     _status = reason == null ? AuthStatus.unauthenticated : AuthStatus.error;
     notifyListeners();
+  }
+
+  /// Si el disco falla, se reporta y se sigue: la sesión en memoria se cierra
+  /// igual. Lo peor es que el token guardado se restaure al reabrir la app; si
+  /// ya no sirve, el backend responde 401 y se vuelve al login.
+  Future<void> _clearStoredSession({int? userId}) async {
+    try {
+      await _sessionStore.clear(userId: userId);
+    } catch (error, stack) {
+      _reportError(error, stack);
+    }
+  }
+
+  /// Se reporta para que el fallo siga viéndose en la consola y los logs.
+  static void _reportError(Object error, StackTrace stack) {
+    FlutterError.reportError(
+      FlutterErrorDetails(exception: error, stack: stack, library: 'auth'),
+    );
   }
 }
